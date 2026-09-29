@@ -1,0 +1,1369 @@
+/* Components: tones, shapes, readouts, banners, lists, tables, charts, log.
+ *
+ * Tokens only. A raw hex in this file is a bug.
+ */
+
+/* --- Tone plumbing ---------------------------------------------------------
+ * Every status surface sets data-tone and inherits its three tone variables.
+ * Colour therefore cannot leak from a parent, and a tone is one attribute.
+ */
+
+[data-tone='ok'] {
+  --tone-ink: var(--status-fresh-ink);
+  --tone-tint: var(--status-fresh-tint);
+  --tone-edge: var(--status-fresh-edge);
+}
+[data-tone='warn'] {
+  --tone-ink: var(--status-use-soon-ink);
+  --tone-tint: var(--status-use-soon-tint);
+  --tone-edge: var(--status-use-soon-edge);
+}
+[data-tone='crit'] {
+  --tone-ink: var(--status-check-food-ink);
+  --tone-tint: var(--status-check-food-tint);
+  --tone-edge: var(--status-check-food-edge);
+}
+[data-tone='unknown'] {
+  --tone-ink: var(--status-sensor-fault-ink);
+  --tone-tint: var(--status-sensor-fault-tint);
+  --tone-edge: var(--status-sensor-fault-edge);
+}
+[data-tone='admin'] {
+  --tone-ink: var(--status-administrative-ink);
+  --tone-tint: var(--status-administrative-tint);
+  --tone-edge: var(--status-administrative-edge);
+}
+[data-tone='neutral'] {
+  --tone-ink: var(--status-informational-ink);
+  --tone-tint: var(--status-informational-tint);
+  --tone-edge: var(--status-informational-edge);
+}
+
+/* The three edge treatments, re-derived on the toned element.
+ *
+ * tokens.css declares them as `--edge-verdict: 5px solid var(--tone-edge, …)`,
+ * which reads as though the tone would be picked up wherever the token is used.
+ * It is not: a custom property substitutes its own var() references against the
+ * element it is *declared* on, and these are declared on :root, where --tone-edge
+ * does not exist. So every edge token resolves to its neutral fallback at :root
+ * and then inherits as grey — measured in Chrome as `5px solid rgb(108,122,123)`
+ * on a check_food annunciator. That would have erased the status colour from
+ * every tone bar and, with it, the whole Priority 2 distinction.
+ *
+ * Re-deriving them here, after [data-tone] has set --tone-edge on the element
+ * that actually uses them, is what makes the edge carry the tone. Same three
+ * values, same three names; only the resolution point moves.
+ */
+[data-tone] {
+  --edge-verdict: 5px solid var(--tone-edge);
+  --edge-caution: 6px double var(--tone-edge);
+  --edge-neutral: 1px solid var(--tone-edge);
+}
+
+/* --- Shape marks -----------------------------------------------------------
+ * The redundant channel beside colour. Ring, triangle, filled square, hatched
+ * diamond, slashed circle: five shapes, five meanings, distinguishable in
+ * greyscale and at 13px. The mapping from status to shape is the contract
+ * between lib/status.ts and Mark.tsx and is not restated here.
+ */
+
+.mark {
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.mark--sm {
+  width: 0.8125rem;
+  height: 0.8125rem;
+}
+
+.mark--lg {
+  width: 2rem;
+  height: 2rem;
+}
+
+/* --- Status chip -----------------------------------------------------------
+ * Shape + word, always both. This is the tag used in the food table and in
+ * compact places where a full annunciator will not fit.
+ */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.4rem 0.15rem 0.3rem;
+  background: var(--tone-tint, var(--status-informational-tint));
+  border: var(--hairline) solid var(--tone-edge, var(--status-informational-edge));
+  border-radius: var(--radius-control);
+  color: var(--tone-ink, var(--status-informational-ink));
+  font-size: var(--type-meta);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+/* A metadata chip is never a status, so it is neutral by construction. */
+.chip--plain {
+  background: transparent;
+  border-color: var(--rule-hairline);
+  color: var(--ink-secondary);
+  font-weight: var(--weight-medium);
+}
+
+/* --- Link status -----------------------------------------------------------
+ * Neutral by construction. A link problem is never red and never green: green in
+ * this system means fresh and nothing else, and a live network is not a food
+ * verdict. A volunteer who has learned to read green must never see it for
+ * something that is not about the food.
+ */
+
+.link-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  background: var(--surface-bezel-well);
+  /* --rule-bezel is 1.56:1 on the bezel, which does not make this chip
+     visible. It is a readout rather than a control, so 1.4.11's 3:1 gate is
+     strictly speaking not the rule that applies here - but this is the one
+     thing on the page that says whether the numbers below it are live, and a
+     volunteer has to be able to find it in one glance. 3.99:1 costs nothing. */
+  border: var(--hairline) solid var(--rule-bezel-control);
+  border-radius: var(--radius-control);
+  color: var(--ink-on-dark);
+  font-size: var(--type-meta);
+}
+
+.link-state__dot {
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--transport-down);
+}
+
+/* Data is arriving: the data blue, lifted for a dark ground. 7.97:1. */
+.link-state[data-link='live'] .link-state__dot {
+  background: var(--transport-live);
+}
+
+/* Quiet, not alarming. 6.75:1. */
+.link-state[data-link='waiting'] .link-state__dot {
+  background: var(--transport-waiting);
+}
+
+/* No information. Deliberately the same value as --ink-on-dark-3, because a
+ * dead link is absence, not a warning. 5.66:1. */
+.link-state[data-link='down'] .link-state__dot {
+  background: var(--transport-down);
+}
+
+.link-state__detail {
+  color: var(--ink-on-dark-2);
+  font-family: var(--font-mono);
+  font-size: var(--type-micro);
+}
+
+/* The only ambient motion in the interface, and it carries meaning: it says
+ * data is arriving. Stopped entirely under prefers-reduced-motion. */
+.link-state[data-link='live'] .link-state__dot {
+  animation: fg-pulse var(--motion-pulse-loop) var(--ease-standard) infinite;
+}
+
+@keyframes fg-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link-state__dot {
+    animation: none !important;
+  }
+}
+
+.link-explainer {
+  margin: var(--space-2) 0 0;
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+  max-inline-size: 60ch;
+  text-wrap: pretty;
+}
+
+.link-explainer summary {
+  cursor: pointer;
+  color: var(--ink-secondary);
+  font-weight: var(--weight-semibold);
+  font-size: var(--type-micro);
+}
+
+.link-explainer p {
+  margin-block-start: var(--space-1);
+  text-wrap: pretty;
+}
+
+/* --- Banners ---------------------------------------------------------------
+ * One shape for all three, a full-width strip with a tone bar and a strong
+ * heading. Deliberately not a toast and not a modal: these persist, they are
+ * not urgent to dismiss, and the volunteer needs them on every screen.
+ *
+ * THE EDGE IS THE LOAD-BEARING PART, and it is a semantic choice.
+ *
+ *   data-kind="verdict"     5px solid   the device is telling you a verdict
+ *   data-kind="device"      6px double  something about the device is wrong
+ *   data-kind="transport"   1px hairline information, no judgement
+ *
+ * The clock banner and a use_soon verdict share a tone, a tint and a triangle.
+ * The double rule is what stops them reading as the same kind of statement, and
+ * the .banner__kind line states the kind in words so the rule is never the only
+ * thing carrying it. "I cannot judge this food" must never look like "this food
+ * is fine", and the reverse must never be true either.
+ */
+.banner {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  background: var(--tone-tint, var(--status-informational-tint));
+  border: var(--hairline) solid var(--tone-edge, var(--status-informational-edge));
+  border-inline-start: var(--edge-verdict);
+  border-radius: var(--radius-plate);
+}
+
+/* A fault in the monitor. A double rule is how a panel meter marks a caution
+ * lamp differently from an alarm lamp. */
+.banner[data-kind='device'] {
+  border-inline-start: var(--edge-caution);
+}
+
+/* A fact about the connection. A hairline says information, no judgement. */
+.banner[data-kind='transport'] {
+  border-inline-start: var(--edge-neutral);
+}
+
+.banner__mark {
+  color: var(--tone-ink, var(--status-informational-ink));
+  padding-block-start: 0.1rem;
+}
+
+/* What kind of statement this is, in plain words. Sits above the title so the
+ * kind is read before the detail, and is real text, so a screen reader announces
+ * it too. */
+.banner__kind {
+  font-size: var(--type-meta);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-secondary);
+  letter-spacing: var(--tracking-label);
+  text-wrap: pretty;
+}
+
+.banner__title {
+  margin: 0;
+  font-size: var(--type-body);
+  font-weight: var(--weight-bold);
+  color: var(--tone-ink, var(--ink-primary));
+  letter-spacing: var(--tracking-heading);
+}
+
+.banner__body {
+  margin-block-start: var(--space-1);
+  font-size: var(--type-small);
+  color: var(--ink-primary);
+  max-inline-size: 76ch;
+  text-wrap: pretty;
+}
+
+.banner__body p + p {
+  margin-block-start: var(--space-2);
+}
+
+/* --- Reading strip ---------------------------------------------------------
+ * A logger's front panel: cells divided by seams, values stamped in mono.
+ *
+ * Seven cells and auto-fit columns means a partial final row at every column
+ * count below seven, so the leftover track is painted --surface-field and each
+ * cell sits on an opaque --surface-plate: the remainder reads as the panel face
+ * rather than as an empty measurement. At the 2-up width a phone actually gets,
+ * the last cell spans the row so the remainder is one continuous face.
+ */
+.readings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  background: var(--surface-field);
+}
+
+.reading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: var(--space-3);
+  border-block-end: var(--seam);
+  border-inline-end: var(--seam);
+  background: var(--surface-plate);
+  min-width: 0;
+}
+
+@media (max-width: 28rem) {
+  .readings > .reading:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+.reading__label {
+  font-size: var(--type-meta);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.reading__value {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  min-height: 1.9rem; /* reserved: no shift when a value arrives */
+}
+
+.reading__number {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  font-size: var(--type-readout);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-data);
+  line-height: var(--leading-data);
+  color: var(--ink-primary);
+}
+
+.reading__number--absent {
+  color: var(--ink-tertiary);
+  font-size: var(--type-readout);
+}
+
+.reading__unit {
+  font-size: var(--type-meta);
+  color: var(--ink-tertiary);
+}
+
+.reading__foot {
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+  line-height: 1.4;
+  min-height: 1.05rem;
+}
+
+/* Flagged: shape beside the label and ink on the number. Never colour alone. */
+.reading--flag .reading__number {
+  color: var(--tone-ink, var(--ink-primary));
+}
+
+/* --- Device facts list ----------------------------------------------------- */
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: var(--seam);
+  background: var(--rule-hairline);
+  border: var(--seam);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-field);
+  min-width: 0;
+}
+
+.fact__label {
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+}
+
+.fact__value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  font-size: var(--type-small);
+  color: var(--ink-primary);
+  overflow-wrap: anywhere;
+}
+
+/* --- Conditions (alerts) --------------------------------------------------
+ * Grouped by what a condition is *about* before it is grouped by how loud it
+ * is. See lib/status.ts for the lane table. No tone bar on a row: the mark, the
+ * kind chip, the severity chip and the word carry it.
+ */
+
+.lane {
+  border-block-end: var(--seam);
+}
+
+.lane:last-child {
+  border-block-end: 0;
+}
+
+.lane__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-3) var(--space-3) var(--space-2);
+  background: var(--surface-field);
+}
+
+.lane__title {
+  margin: 0;
+  font-size: var(--type-small);
+  font-weight: var(--weight-bold);
+  color: var(--ink-primary);
+}
+
+.lane__count {
+  font-family: var(--font-mono);
+  font-size: var(--type-meta);
+  color: var(--ink-tertiary);
+}
+
+.lane__blurb {
+  flex: 1 1 18rem;
+  font-size: var(--type-micro);
+  color: var(--ink-secondary);
+  text-wrap: pretty;
+}
+
+.condition {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-block-start: var(--seam);
+}
+
+.condition__mark {
+  color: var(--tone-ink, var(--status-informational-ink));
+  padding-block-start: 0.15rem;
+}
+
+.condition__title {
+  margin: 0;
+  font-size: var(--type-small);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-primary);
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+
+.condition__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  margin-block-start: 0.2rem;
+}
+
+/* The backend's prose, verbatim: it encodes the safety rules. */
+.condition__detail {
+  margin-block-start: var(--space-1);
+  font-size: var(--type-small);
+  color: var(--ink-secondary);
+  max-inline-size: 76ch;
+  text-wrap: pretty;
+}
+
+.condition__ack {
+  margin-block-start: var(--space-2);
+  font-size: var(--type-micro);
+  color: var(--ink-secondary);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+}
+
+.condition__actions {
+  margin-block-start: var(--space-2);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.condition--acked {
+  background: var(--surface-field);
+}
+
+.condition--acked .condition__title {
+  color: var(--ink-secondary);
+  font-weight: var(--weight-medium);
+}
+
+.condition--pending {
+  opacity: 0.72;
+}
+
+.condition__error {
+  margin-block-start: var(--space-1);
+  font-size: var(--type-micro);
+  color: var(--status-check-food-ink);
+  font-weight: var(--weight-semibold);
+  text-wrap: pretty;
+}
+
+.ack-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-block-start: var(--seam);
+  background: var(--surface-field);
+}
+
+.ack-form__label {
+  font-size: var(--type-meta);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-secondary);
+}
+
+/* --- Stored-food table ---------------------------------------------------- */
+
+/* Structural containment, not a preference.
+ *
+ * A table whose cells cannot wrap has a min-content width. `width: 100%` does
+ * not cap that: the table simply grows past its grid track and paints over the
+ * next panel, with no scrollbar and nothing that looks broken. It happened here
+ * - 967px of table inside a 584px column at the 1088px breakpoint, hiding the
+ * "Time remaining" column entirely behind the Conditions panel.
+ *
+ * This makes that outcome impossible: the table may be wider than its column,
+ * but it can only ever scroll INSIDE its own panel.
+ */
+.food-table-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Tighter cells once the food table is sharing a column with the conditions
+   rail. At this width six columns of --space-3 inline padding is 144px of pure
+   padding, which is a sixth of the panel it has to live in. */
+@media (max-width: 90rem) {
+  .food-table th,
+  .food-table td {
+    padding-inline: var(--space-2);
+  }
+}
+
+.food-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-inline-size: 0;
+}
+
+.food-cell__name {
+  font-weight: var(--weight-semibold);
+  color: var(--ink-primary);
+  overflow-wrap: anywhere;
+}
+
+.food-cell__meta {
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+}
+
+.food-cell__uid {
+  font-family: var(--font-mono);
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+  letter-spacing: var(--tracking-label);
+}
+
+.row-retired {
+  background: var(--surface-field);
+}
+
+.row-retired .food-cell__name {
+  color: var(--ink-secondary);
+  font-weight: var(--weight-medium);
+}
+
+/* An absence is a sentence, not a dash, and it is italic so it reads as an
+ * absence at a glance and not only by its wording. */
+.withheld {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.withheld__value {
+  font-size: var(--type-small);
+  font-weight: var(--weight-semibold);
+  color: var(--status-sensor-fault-ink);
+  font-style: italic;
+}
+
+.withheld__note {
+  font-size: var(--type-micro);
+  color: var(--ink-secondary);
+  max-inline-size: 34ch;
+  text-wrap: pretty;
+}
+
+/* --- Progress meter -------------------------------------------------------
+ * A flat bar with a scale, not a rounded pill. The bar is one colour; the
+ * scale's 75% mark is a notch, because 75% is the use-soon threshold the device
+ * applies and it should be visible as a place on the scale.
+ */
+
+.meter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  /* Was 6.5rem. A bar only has to be long enough to show a proportion, and
+     6.5rem was the single largest contributor to the food table's min-content
+     width - large enough to push the Status and Time-remaining columns out of
+     view in a two-column layout. 4.5rem still reads as a bar, and the numeric
+     percentage above it is the precise value. */
+  min-inline-size: 4.5rem;
+}
+
+/* The track is carved into the face, not raised out of it. */
+.meter__track {
+  position: relative;
+  height: 0.5rem;
+  background: var(--surface-sunken);
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--radius-hairline);
+  overflow: hidden;
+}
+
+.meter__fill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  background: var(--tone-edge, var(--status-informational-edge));
+  /* Width is set inline from the value the backend sent. */
+}
+
+.meter__notch {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 75%;
+  width: 2px;
+  background: var(--ink-secondary);
+}
+
+.meter__scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.meter__value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: var(--tracking-data);
+  color: var(--ink-primary);
+  font-weight: var(--weight-semibold);
+}
+
+/* A withheld meter is hatched, never empty: an empty bar reads as 0% used. */
+.meter--withheld .meter__track {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--status-sensor-fault-tint) 0 6px,
+    var(--surface-plate) 6px 12px
+  );
+}
+
+/* --- Windows High Contrast, forced colors ----------------------------------
+ * The system already survives forced colors in one specific way, and it is
+ * worth naming before adding to it: where a distinction is load-bearing, it is
+ * carried by a border-style or by an SVG pattern, never by a hue. That is why
+ * the device banner's `6px double` caution edge and the sensor-fault SVG hatch
+ * both come through untouched - they are shape, and shape is what the mode
+ * leaves alone. Neither of the two elements below had that property, which is
+ * why both collapsed.
+ *
+ * What collapsed, measured under `forced-colors: active`:
+ *
+ *   .meter__fill       rgb(255,255,255)   (was --tone-edge, the urgency ink)
+ *   .meter__track      rgb(255,255,255)   border: black
+ *   .meter--withheld   background-image: none   <- the 135deg hatch is REMOVED
+ *   .link-state__dot   rgb(255,255,255)   (all three transport states equal)
+ *
+ * So a 100%-elapsed item, a 12%-elapsed item, a withheld item and an empty
+ * track were all the same empty outlined white bar, and the only thing
+ * distinguishing them was an `aria-valuenow` no sighted user can see. The
+ * rules below give each one a mark the mode preserves.
+ */
+@media (forced-colors: active) {
+  /* The fill is the meter. `Canvas` on `Canvas` is invisible, so the length of
+   * the bar - the only thing that was ever on screen for it - disappears. The
+   * system colours are guaranteed to contrast, and `CanvasText` on `Canvas` is
+   * the maximally legible pairing available, so the bar is drawn in the text
+   * colour on the canvas colour and its LENGTH carries the value, exactly as
+   * it does without this block. */
+  .meter__track {
+    background: Canvas;
+    border-color: CanvasText;
+  }
+
+  .meter__fill {
+    background: CanvasText;
+  }
+
+  /* A withheld meter must still be distinguishable from an EMPTY one, or the
+   * hatch's whole job - "this is not 0% used, the device could not say" -
+   * is lost. Background images are dropped in this mode, so the pattern has to
+   * be opted back in. That is safe here and only here: the gradient is built
+   * from system colours, not from author hues, so nothing that forced colors
+   * exists to override is being preserved. */
+  .meter--withheld .meter__track {
+    background-image: repeating-linear-gradient(
+      135deg,
+      CanvasText 0 2px,
+      Canvas 2px 6px
+    );
+    forced-color-adjust: none;
+  }
+
+  /* The 75% notch is a place on the scale. It used to be 2px of --ink-secondary
+   * sitting on the fill, so in this mode it was black on a white fill and
+   * visible; the moment the fill above became CanvasText it would have been
+   * black on black and gone. It is redrawn as a white tick with a black edge,
+   * which reads on both the filled part of the bar and the empty part, and
+   * widens 2px to 4px here so a 1px border leaves a visible core. The scale
+   * labels and the aria-valuetext say the same thing in words. */
+  .meter__notch {
+    inline-size: 4px;
+    background: Canvas;
+    border: 1px solid CanvasText;
+  }
+
+  /* The transport lamp. Three states, one 8px dot, and every hue the mode
+   * replaced with white. Same rule as the device banner's double edge: give
+   * each state a different SHAPE of mark rather than a different colour.
+   *
+   *   live      a solid disc            data is arriving
+   *   waiting   a dashed ring           quiet, not alarming
+   *   down      a dotted ring           no information
+   *
+   * `connecting` is grouped with `waiting` because that is what it means to
+   * this page - the feed is up and nothing is arriving - and the word in the
+   * chip already tells the two apart. The dot also grows from 8px to 10px here
+   * and only here: at 8px a 2px ring is 4px of interior and the dash pattern
+   * cannot be resolved. */
+  .link-state__dot {
+    inline-size: 0.625rem;
+    block-size: 0.625rem;
+    background: Canvas;
+    border: 2px solid CanvasText;
+  }
+
+  .link-state[data-link='live'] .link-state__dot {
+    background: CanvasText;
+  }
+
+  .link-state[data-link='waiting'] .link-state__dot,
+  .link-state[data-link='connecting'] .link-state__dot {
+    border-style: dashed;
+  }
+
+  .link-state[data-link='down'] .link-state__dot {
+    border-style: dotted;
+  }
+
+  /* Two more states in this pass that are also carried by a fill and therefore
+   * collapse here, found while measuring the two above. Both are cheap, and
+   * both are states whose *meaning* is the difference from their neighbours. */
+
+  /* Which range is plotted is a fill, so the pressed option becomes identical
+   * to the three unpressed ones. `aria-pressed` still carries it to a screen
+   * reader; this gives a sighted high-contrast user the box back. Drawn
+   * inset because `.segmented` is `overflow: hidden`. */
+  .segmented__option[aria-pressed='true'],
+  .segmented__option[aria-checked='true'] {
+    outline: 2px solid CanvasText;
+    outline-offset: -2px;
+  }
+
+  /* A disabled button loses its grey fill and its grey text together, so it
+   * looks exactly like an enabled one. A dashed boundary says "not available"
+   * in a way no colour is being asked to say. */
+  .btn:disabled {
+    border-style: dashed;
+  }
+}
+
+/* --- Trends / charts ------------------------------------------------------ */
+
+.chart-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.chart {
+  border: var(--seam);
+  border-radius: var(--radius-control);
+  background: var(--surface-plate);
+  padding: var(--space-3);
+}
+
+.chart__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  margin-block-end: var(--space-2);
+}
+
+.chart__title {
+  margin: 0;
+  font-size: var(--type-small);
+  font-weight: var(--weight-bold);
+}
+
+.chart__readout {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  margin-inline-start: auto;
+}
+
+.chart__readout-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  font-size: var(--type-readout);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-data);
+  letter-spacing: var(--tracking-data);
+}
+
+.chart__plot {
+  inline-size: 100%;
+  block-size: var(--chart-plot-height);
+  display: block;
+  overflow: visible;
+}
+
+/* The axis is the line that has to read: 4.46:1 on the plate. */
+.chart__axis-line {
+  stroke: var(--chart-axis);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+/* Gridlines are decorative and sit at 2.22:1 on purpose; the axis carries it. */
+.chart__grid-line {
+  stroke: var(--chart-grid);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+/* --chart-axis-text-size is 10px. The old hardcoded 9.5px was not comfortably
+ * readable on a 360px screen, and the ticks have to align, hence tabular
+ * figures. */
+.chart__axis-text {
+  font-family: var(--font-mono);
+  font-size: var(--chart-axis-text-size);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  fill: var(--chart-label);
+}
+
+.chart__axis-title {
+  font-family: var(--font-sans);
+  font-size: var(--chart-axis-text-size);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-label);
+  fill: var(--chart-label);
+}
+
+.chart__series {
+  fill: none;
+  stroke: var(--chart-series-2);
+  stroke-width: var(--chart-line-weight);
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Geometry property, so the radius is a token. The r="3" attribute in the
+ * markup stays as the fallback for engines that do not support it. */
+.chart__last {
+  fill: var(--chart-series-2);
+  r: var(--chart-point-radius);
+}
+
+/* The device's own configured band. Never the series colour: a band is not a
+ * measurement. */
+.chart__band {
+  fill: var(--chart-band);
+}
+
+.chart__band-edge {
+  stroke: var(--chart-band-edge);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+
+.chart__band-text {
+  font-family: var(--font-sans);
+  font-size: var(--chart-axis-text-size);
+  fill: var(--chart-label-quiet);
+}
+
+.chart__empty-text {
+  font-family: var(--font-sans);
+  font-size: var(--type-meta);
+  fill: var(--chart-label);
+}
+
+/* An empty plot is a sentence, not an empty rectangle. */
+.chart__empty-text-block {
+  padding: var(--space-4) 0;
+  font-size: var(--type-small);
+  color: var(--ink-secondary);
+  min-height: 7rem;
+  max-inline-size: 48ch;
+  text-wrap: pretty;
+}
+
+.chart__foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin-block-start: var(--space-2);
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  font-size: var(--type-micro);
+  color: var(--ink-secondary);
+}
+
+.chart-legend__key {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.chart-legend__swatch {
+  inline-size: 1.25rem;
+  block-size: 0.4rem;
+  background: var(--accent-series);
+}
+
+.chart-legend__swatch--band {
+  background: var(--chart-band);
+  border-block: var(--hairline) dashed var(--chart-band-edge);
+}
+
+/* --- Event log ------------------------------------------------------------ */
+
+.log-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-block-end: var(--seam);
+}
+
+.log-item:last-child {
+  border-block-end: 0;
+}
+
+.log-item__stamp {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-inline-size: 8.5rem;
+  font-size: var(--type-micro);
+  color: var(--ink-secondary);
+  padding-block-start: 0.1rem;
+}
+
+.log-item__time {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: var(--tracking-data);
+  color: var(--ink-primary);
+}
+
+/* Untrusted device time: the stamp is marked, not silently swapped for another
+ * clock. This is the log's version of the same distinction the banners make. */
+.log-item__time--untrusted {
+  color: var(--status-sensor-fault-ink);
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+.log-item__body {
+  min-inline-size: 0;
+}
+
+.log-item__type {
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.log-item__message {
+  font-size: var(--type-small);
+  color: var(--ink-primary);
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+
+/* --- Notices: empty, error, loading ---------------------------------------
+ * A notice is a statement about the dashboard or the service, never about the
+ * food, so it says which kind of statement it is and wears the treatment for
+ * that kind - the same `data-kind` mechanism the banners use, for the same
+ * reason.
+ */
+
+.notice {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-3);
+  border: var(--hairline) solid var(--tone-edge, var(--rule-hairline));
+  border-inline-start: var(--edge-verdict);
+  border-radius: var(--radius-plate);
+  background: var(--tone-tint, var(--surface-plate));
+}
+
+/* data-kind="service": the service did not answer, so the monitor's view of the
+ * world failed. It is a fact about the instrument, and it is NOT a verdict about
+ * food - which means it may not wear any of the four things that make a verdict
+ * a verdict.
+ *
+ * The defect this replaces: the `.notice` base edge was `--edge-verdict` with no
+ * `data-kind` to separate it, and ErrorNotice's default branch returns
+ * `tone: 'crit', shape: 'square'`. Against a real HTTP 500 that rendered
+ * `5px solid rgb(132,28,19)`, background `rgb(245,217,211)`, a filled square and
+ * a `rgb(132,28,19)` title - byte-identical to a check_food verdict, on a page
+ * whose one red is reserved for "throw this food out". Three of the four `warn`
+ * branches were identical to a use_soon verdict the same way. A volunteer who
+ * had correctly learned the colour and shape language would have been taught
+ * the exact opposite lesson by a failed request, which is the same failure
+ * mode --edge-caution was invented to prevent.
+ *
+ * The treatment is the instrument-caution family instead:
+ *   6px DOUBLE   a verdict is one solid bar; a double rule is how a panel meter
+ *                marks a caution lamp differently from an alarm lamp
+ *   blue-slate   --status-administrative, the one status class that is defined
+ *                as "a problem, and freshness is unaffected"
+ *   plain diamond the glyph no verdict uses, the same one device and admin
+ *                conditions take
+ *
+ * Nothing is lost. What the `crit`/`warn` tones carried - how bad this is -
+ * is still in the title, in what the service said, and in the code, the HTTP
+ * status and the request id printed underneath. It should not be in a colour
+ * that means the food is bad. */
+.notice[data-kind='service'] {
+  --tone-ink: var(--status-administrative-ink);
+  --tone-tint: var(--status-administrative-tint);
+  --tone-edge: var(--status-administrative-edge);
+  --edge-verdict: 6px double var(--status-administrative-edge);
+}
+
+/* The kind, in plain words, above the title - so the double rule and the
+ * blue-slate are never the only thing carrying it. Same line the banners use. */
+.notice__kind {
+  margin-block-end: var(--space-1);
+  font-size: var(--type-meta);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-secondary);
+  letter-spacing: var(--tracking-label);
+  text-wrap: pretty;
+}
+
+.notice__title {
+  margin: 0;
+  font-size: var(--type-body);
+  font-weight: var(--weight-bold);
+  color: var(--tone-ink, var(--ink-primary));
+  letter-spacing: var(--tracking-heading);
+  text-wrap: balance;
+}
+
+.notice__body {
+  margin-block-start: var(--space-2);
+  font-size: var(--type-small);
+  color: var(--ink-primary);
+  max-inline-size: 72ch;
+}
+
+.notice__body p + p {
+  margin-block-start: var(--space-2);
+}
+
+.notice__body ol,
+.notice__body ul {
+  margin-block-start: var(--space-2);
+  padding-inline-start: var(--space-5);
+  list-style: disc;
+}
+
+.notice__body li + li {
+  margin-block-start: var(--space-1);
+}
+
+.notice__meta {
+  display: block;
+  margin-block-start: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--type-micro);
+  color: var(--ink-secondary);
+  overflow-wrap: anywhere;
+}
+
+.notice__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-block-start: var(--space-3);
+}
+
+.loading-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  font-size: var(--type-small);
+  color: var(--ink-secondary);
+  min-height: 3rem;
+}
+
+/* The second of the system's two loops, and it carries information: a request
+ * is in flight. Under reduced motion it stops and the bar is simply full. */
+.loading-line__bar {
+  inline-size: 2.5rem;
+  block-size: 2px;
+  background: var(--rule-hairline);
+  overflow: hidden;
+  position: relative;
+}
+
+.loading-line__bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  inline-size: 40%;
+  background: var(--ink-secondary);
+  animation: fg-sweep var(--motion-sweep) var(--ease-standard) infinite;
+}
+
+@keyframes fg-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-line__bar::after {
+    animation: none !important;
+    inline-size: 100%;
+  }
+}
+
+/* --- Mobile reflow for the food table -------------------------------------
+ * The table stays a real <table> in the DOM - screen readers keep the column
+ * relationships - and each cell carries a visible label at narrow widths so a
+ * 360px phone still reads as a list of items.
+ */
+
+@media (max-width: 46rem) {
+  .food-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .food-table,
+  .food-table tbody,
+  .food-table tr,
+  .food-table td {
+    display: block;
+    inline-size: 100%;
+  }
+
+  .food-table tr {
+    border-block-end: var(--seam-strong);
+    padding: var(--space-2) 0;
+  }
+
+  .food-table tbody tr:last-child {
+    border-block-end: 0;
+  }
+
+  .food-table td {
+    display: grid;
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+    gap: var(--space-2);
+    align-items: baseline;
+    border-block-end: 0;
+    padding: 0.1rem var(--space-3);
+    text-align: start;
+  }
+
+  /* Numeric columns still align their digits, on the value side of the pair. */
+  .food-table td.cell-num {
+    text-align: start;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .food-table .cell-label {
+    font-size: var(--type-micro);
+    font-weight: var(--weight-semibold);
+    color: var(--ink-tertiary);
+  }
+
+  /* An empty cell is hidden so a row never has a label with nothing beside it. */
+  .food-table td:empty {
+    display: none;
+  }
+}
+
+@media (min-width: 46.0625rem) {
+  .food-table .cell-label {
+    display: none;
+  }
+}
+
+
+/* --- More contrast ---------------------------------------------------------
+ * The token half of this query is at the foot of tokens.css. This is the
+ * component half: the 1.4.11 rule is that a control is identified by its
+ * border, and the control borders in this system are --rule-strong, which
+ * already clears 3:1. What is *not* 3:1 is --rule-hairline, and it is on the
+ * quiet and primary buttons, the segmented control's dividers, the plain chip
+ * and the select. Under `more`, those become --ink-secondary, so no control in
+ * the product is identified by a boundary below the gate.
+ */
+@media (prefers-contrast: more) {
+  .btn,
+  .input,
+  .segmented,
+  .btn--quiet,
+  .chip--plain,
+  .segmented__option {
+    border-color: var(--ink-secondary);
+  }
+
+  .masthead .btn,
+  .masthead .btn--quiet {
+    border-color: var(--ink-on-dark-2);
+  }
+}
+
+
+/* --- Print -----------------------------------------------------------------
+ * The token half of this block is at the foot of tokens.css: one ink, no
+ * tints, every rule solid black, the bezel dropped. This is the half that
+ * needs the component.
+ *
+ * The governing rule for a printed copy of this page: a volunteer reading it
+ * next to the food must be able to tell the four verdicts apart, and the only
+ * channels a printer reliably keeps are ink weight, shape, and words. The
+ * design system already says status survives greyscale on exactly those three
+ * (section 5.3), so the tints going to white costs nothing - what has to be
+ * added back is the two things that were fills, because a printer in economy
+ * mode drops background colours and background images silently.
+ */
+@media print {
+  /* Nothing is interactive on paper, and a sticky masthead prints over the
+     verdict, which is the one thing on this page that must not be covered. */
+  .masthead,
+  .data-table thead th {
+    position: static;
+  }
+
+  /* A scroll container on paper is a box with content scrolled out of sight
+     and no way to scroll it. The table was already made able to exceed its
+     column by .food-table-scroll; on paper it is allowed to run long. */
+  .food-table-scroll {
+    overflow: visible;
+  }
+
+  /* The one control that is not content and is never worth a line of toner. */
+  .skip-link {
+    display: none;
+  }
+
+  /* Background colours and background images are dropped by most printers
+     unless the element asks for them explicitly. Two of them are the
+     information: the meter fill is the only thing on screen that says how much
+     of a storage window has elapsed, and the 135deg hatch is the only thing
+     that distinguishes a withheld meter from an empty one. The hatch is
+     redrawn in solid black because the tint it is built from is white in
+     print, and a white hatch on white paper is not a hatch. */
+  .meter__fill,
+  .chart-legend__swatch,
+  .loading-line__bar::after {
+    print-color-adjust: exact;
+  }
+
+  .meter--withheld .meter__track {
+    background-image: repeating-linear-gradient(
+      135deg,
+      #000 0 2px,
+      #fff 2px 6px
+    );
+    print-color-adjust: exact;
+  }
+
+  /* The 75% notch, for the same reason as the fill it sits on. */
+  .meter__notch {
+    background: #fff;
+    outline: 1px solid #000;
+  }
+
+  /* A panel split across two pages reads as two verdicts. A chart, a single
+     condition and a single log row all have a minimum useful integrity, and
+     none of them is taller than a page. */
+  .panel,
+  .chart,
+  .banner,
+  .notice,
+  .condition,
+  .log-item {
+    break-inside: avoid;
+  }
+
+  /* Charts and meters print with their own dimensions, so nothing is left to
+     be scaled by a printer that has never heard of a viewBox. */
+  .chart__plot {
+    max-block-size: none;
+  }
+}
+

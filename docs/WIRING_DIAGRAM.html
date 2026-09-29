@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FreshGuard — ESP8266 Complete Wiring &amp; Pinout Diagram</title>
+<style>
+  :root{
+    --ink:#12161c; --ink-2:#48525f; --ink-3:#6f7b8a;
+    --rule:#d6dbe2; --rule-2:#e9edf2; --paper:#fbfcfd; --panel:#f2f5f8;
+    --v3:#0a6c74; --v5:#a8550a; --warn:#8a5200; --warn-bg:#fdf6e7;
+    --stop:#9a1c1c; --stop-bg:#fdf0f0; --ok:#1d6b3f; --ok-bg:#eff8f2;
+    --pin:#5a3ea8; --mono:ui-monospace,"Cascadia Mono","Consolas",monospace;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  .sheet{max-width:1180px;margin:0 auto;padding:32px 28px 72px}
+  h1{font-size:27px;margin:0 0 4px;letter-spacing:-.02em}
+  .sub{color:var(--ink-2);font-size:14px;margin:0 0 26px}
+  h2{font-size:19px;margin:38px 0 6px;padding-bottom:7px;border-bottom:2px solid var(--ink);letter-spacing:-.01em}
+  h2 .n{color:var(--ink-3);font-family:var(--mono);font-size:14px;margin-right:9px}
+  h3{font-size:15px;margin:22px 0 8px;color:var(--ink)}
+  p{margin:9px 0}
+  code,.mono{font-family:var(--mono);font-size:.92em}
+  .lede{color:var(--ink-2);font-size:14px;margin:0 0 14px}
+
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px}
+  th,td{text-align:left;padding:6px 9px;border-bottom:1px solid var(--rule-2);vertical-align:top}
+  th{background:var(--panel);font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;
+     color:var(--ink-2);font-weight:650;border-bottom:1px solid var(--rule)}
+  td.pin,th.pin{font-family:var(--mono);white-space:nowrap;color:var(--pin);font-weight:600}
+  tbody tr:hover{background:#fafbfd}
+  .cap{font-size:12.5px;color:var(--ink-3);margin:6px 0 0}
+
+  .box{border:1px solid var(--rule);border-left:4px solid var(--ink-3);
+       background:#fff;padding:13px 16px;margin:15px 0;border-radius:2px}
+  .box.stop{border-left-color:var(--stop);background:var(--stop-bg)}
+  .box.warn{border-left-color:var(--warn);background:var(--warn-bg)}
+  .box.ok{border-left-color:var(--ok);background:var(--ok-bg)}
+  .box.v3{border-left-color:var(--v3)}
+  .box.v5{border-left-color:var(--v5)}
+  .box h4{margin:0 0 7px;font-size:13px;letter-spacing:.02em;text-transform:uppercase}
+  .box.stop h4{color:var(--stop)} .box.warn h4{color:var(--warn)}
+  .box.ok h4{color:var(--ok)} .box.v3 h4{color:var(--v3)} .box.v5 h4{color:var(--v5)}
+  .box p:last-child,.box ul:last-child{margin-bottom:0}
+  .box ul{margin:6px 0 0;padding-left:19px}
+  .box li{margin:4px 0}
+
+  .grid{display:grid;gap:15px}
+  .g2{grid-template-columns:1fr 1fr}
+  @media(max-width:820px){.g2{grid-template-columns:1fr}}
+  .tag{display:inline-block;font-family:var(--mono);font-size:11px;padding:1px 6px;
+       border-radius:2px;background:var(--panel);border:1px solid var(--rule);color:var(--ink-2)}
+  .v3t{color:var(--v3);border-color:#9ecfd2;background:#eef8f9}
+  .v5t{color:var(--v5);border-color:#e3c39a;background:#fdf4ea}
+  .buy{background:var(--ok-bg);border:1px solid #b8dcc6}
+  .buy td{background:transparent}
+  figure{margin:16px 0}
+  svg{display:block;width:100%;height:auto;background:#fff;border:1px solid var(--rule);border-radius:2px}
+  figcaption{font-size:12.5px;color:var(--ink-3);margin-top:7px}
+  hr{border:0;border-top:1px solid var(--rule);margin:32px 0}
+  footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--rule);
+         font-size:12.5px;color:var(--ink-3)}
+  @media print{
+    body{background:#fff} .sheet{max-width:none;padding:0}
+    h2{page-break-after:avoid} table,.box,figure{page-break-inside:avoid}
+    svg{border:1px solid #999}
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+<h1>FreshGuard — Complete Wiring &amp; Pinout Diagram</h1>
+<p class="sub">ESP8266MOD cold-storage food-safety monitor · derived from the compiled firmware (<code>FreshGuard.ino</code>) so the wiring and the code cannot disagree.</p>
+
+<div class="box stop">
+  <h4>Before you power anything up</h4>
+  <ul>
+    <li><strong>The ESP8266 is 3.3 V only.</strong> Nothing 5 V may touch a GPIO. Your BSS138 level shifter is what makes the 5 V LCD safe.</li>
+    <li><strong>You do not yet have a PCF8574.</strong> It is not an accessory — without it the firmware reports <code>Sensor&nbsp;Fault</code> permanently and no food verdict is ever produced.</li>
+    <li><strong>Common ground is mandatory.</strong> USB negative, every module GND, and the shifter's GND terminal must all be tied.</li>
+  </ul>
+</div>
+
+<h2><span class="n">1</span>System topology</h2>
+<p class="lede">Three separate buses leave the ESP8266: a 3.3 V I²C bus, a 5 V-shifted I²C branch for the LCD, and hardware SPI for the RFID reader. Everything switched (LEDs, buzzer) hangs off the I/O expander, never off the MCU.</p>
+
+<figure>
+<svg viewBox="0 0 1120 560" role="img" aria-label="Block diagram: ESP8266 in the centre. I2C bus to BME280, DS3231, ADS1115 and PCF8574 at 3.3 volts. I2C through level shifter to 5 volt LCD. SPI to RC522. GPIO16 spare.  PCF8574 drives reed input, three LEDs directly, one MOSFET for the buzzer, and RC522 reset.">
+  <defs>
+    <marker id="ar" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#48525f"/>
+    </marker>
+    <marker id="ar5" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#a8550a"/>
+    </marker>
+  </defs>
+  <rect width="1120" height="560" fill="#fff"/>
+
+  <!-- power rails -->
+  <text x="20" y="34" font-family="monospace" font-size="12" font-weight="700" fill="#0a6c74">+3V3 RAIL</text>
+  <line x1="20" y1="44" x2="1100" y2="44" stroke="#0a6c74" stroke-width="2" stroke-dasharray="7 4"/>
+  <text x="20" y="536" font-family="monospace" font-size="12" font-weight="700" fill="#6f7b8a">COMMON GND</text>
+  <line x1="20" y1="526" x2="1100" y2="526" stroke="#6f7b8a" stroke-width="2" stroke-dasharray="7 4"/>
+  <text x="20" y="504" font-family="monospace" font-size="12" font-weight="700" fill="#a8550a">+5V RAIL (from USB / VIN)</text>
+  <line x1="20" y1="494" x2="1100" y2="494" stroke="#a8550a" stroke-width="2" stroke-dasharray="5 4"/>
+
+  <!-- MCU -->
+  <rect x="400" y="180" width="320" height="180" rx="4" fill="#f7f9fb" stroke="#12161c" stroke-width="2.5"/>
+  <text x="560" y="208" text-anchor="middle" font-size="15" font-weight="700" fill="#12161c">ESP8266MOD</text>
+  <text x="560" y="226" text-anchor="middle" font-size="11.5" fill="#6f7b8a">NodeMCU · 3.3 V logic only</text>
+  <text x="420" y="252" font-family="monospace" font-size="12" fill="#5a3ea8">GPIO4  SDA</text>
+  <text x="420" y="270" font-family="monospace" font-size="12" fill="#5a3ea8">GPIO5  SCL</text>
+  <text x="420" y="288" font-family="monospace" font-size="12" fill="#5a3ea8">GPIO16 FREE</text>
+  <text x="420" y="306" font-family="monospace" font-size="12" fill="#5a3ea8">GPIO12 MISO</text>
+  <text x="420" y="324" font-family="monospace" font-size="12" fill="#5a3ea8">GPIO13 MOSI</text>
+  <text x="560" y="252" font-family="monospace" font-size="12" fill="#5a3ea8">GPIO14 SCK</text>
+  <text x="560" y="270" font-family="monospace" font-size="12" fill="#5a3ea8">GPIO15 SS</text>
+  <text x="560" y="306" font-family="monospace" font-size="12" fill="#9a1c1c">GPIO0  free*</text>
+  <text x="560" y="324" font-family="monospace" font-size="12" fill="#9a1c1c">GPIO2  free*</text>
+  <text x="560" y="346" text-anchor="middle" font-size="10" fill="#9a1c1c">*boot-strapped — do not use</text>
+  <line x1="440" y1="44" x2="440" y2="180" stroke="#0a6c74" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="680" y1="44" x2="680" y2="180" stroke="#0a6c74" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="560" y1="360" x2="560" y2="526" stroke="#6f7b8a" stroke-width="2"/>
+
+  <!-- I2C 3v3 devices -->
+  <g font-size="11.5">
+    <rect x="40" y="86" width="176" height="52" rx="3" fill="#eef8f9" stroke="#0a6c74" stroke-width="1.6"/>
+    <text x="56" y="107" font-weight="700" fill="#0a6c74">BMP280</text>
+    <text x="56" y="125" font-family="monospace" font-size="11" fill="#48525f">0x76 · temp+press</text>
+    <line x1="128" y1="44" x2="128" y2="86" stroke="#0a6c74" stroke-width="1.6" marker-end="url(#ar)"/>
+
+    <rect x="40" y="152" width="176" height="52" rx="3" fill="#eef8f9" stroke="#0a6c74" stroke-width="1.6"/>
+    <text x="56" y="173" font-weight="700" fill="#0a6c74">DS3231</text>
+    <text x="56" y="191" font-family="monospace" font-size="11" fill="#48525f">0x68 · RTC</text>
+    <line x1="128" y1="44" x2="128" y2="152" stroke="#0a6c74" stroke-width="1.6" marker-end="url(#ar)"/>
+
+    <rect x="40" y="218" width="176" height="52" rx="3" fill="#eef8f9" stroke="#0a6c74" stroke-width="1.6"/>
+    <text x="56" y="239" font-weight="700" fill="#0a6c74">ADS1115</text>
+    <text x="56" y="257" font-family="monospace" font-size="11" fill="#48525f">0x48 · AIN0 = MQ-135</text>
+    <line x1="128" y1="44" x2="128" y2="218" stroke="#0a6c74" stroke-width="1.6" marker-end="url(#ar)"/>
+
+    <!-- DHT11 removed: humidity is read from the BME280 on the I2C bus, so
+         GPIO16 is now spare. Drawn as an available-pin marker, not a module. -->
+    <rect x="40" y="284" width="176" height="52" rx="3" fill="#f7f9fb" stroke="#6f7b8a" stroke-width="1.4" stroke-dasharray="5 3"/>
+    <text x="56" y="305" font-weight="700" fill="#6f7b8a">GPIO16 SPARE</text>
+    <text x="56" y="323" font-family="monospace" font-size="11" fill="#6f7b8a">DHT11 removed</text>
+  </g>
+
+  <!-- I2C trunk -->
+  <line x1="290" y1="112" x2="290" y2="464" stroke="#0a6c74" stroke-width="2.5"/>
+  <line x1="216" y1="112" x2="290" y2="112" stroke="#0a6c74" stroke-width="1.6"/>
+  <line x1="216" y1="178" x2="290" y2="178" stroke="#0a6c74" stroke-width="1.6"/>
+  <line x1="216" y1="244" x2="290" y2="244" stroke="#0a6c74" stroke-width="1.6"/>
+  <line x1="290" y1="230" x2="400" y2="230" stroke="#0a6c74" stroke-width="2.5" marker-end="url(#ar)"/>
+  <text x="300" y="440" font-family="monospace" font-size="11" fill="#0a6c74">I2C 3V3</text>
+  <text x="300" y="456" font-family="monospace" font-size="10.5" fill="#6f7b8a">4.7k pull-ups to 3V3</text>
+
+  <!-- level shifter + LCD -->
+  <rect x="800" y="150" width="200" height="62" rx="3" fill="#fdf4ea" stroke="#a8550a" stroke-width="1.8"/>
+  <text x="900" y="174" text-anchor="middle" font-size="12" font-weight="700" fill="#a8550a">BSS138 SHIFTER</text>
+  <text x="900" y="192" text-anchor="middle" font-family="monospace" font-size="10.5" fill="#48525f">LV1→HV1 · LV2→HV2</text>
+  <line x1="720" y1="181" x2="800" y2="181" stroke="#0a6c74" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="900" y1="150" x2="900" y2="44" stroke="#a8550a" stroke-width="1.6" marker-end="url(#ar5)"/>
+  <line x1="900" y1="212" x2="1000" y2="212" stroke="#a8550a" stroke-width="2" marker-end="url(#ar5)"/>
+
+  <rect x="1000" y="180" width="104" height="64" rx="3" fill="#fdf4ea" stroke="#a8550a" stroke-width="1.8"/>
+  <text x="1052" y="205" text-anchor="middle" font-size="12" font-weight="700" fill="#a8550a">LCD</text>
+  <text x="1052" y="223" text-anchor="middle" font-family="monospace" font-size="10.5" fill="#48525f">0x27 · 5 V</text>
+  <line x1="1052" y1="244" x2="1052" y2="494" stroke="#a8550a" stroke-width="1.6" marker-end="url(#ar5)"/>
+  <text x="906" y="66" font-family="monospace" font-size="10.5" fill="#a8550a">HV = 5V</text>
+  <text x="806" y="140" font-family="monospace" font-size="10.5" fill="#0a6c74">LV = 3V3</text>
+  <text x="806" y="126" font-family="monospace" font-size="10.5" fill="#6f7b8a">shifter GND = common GND</text>
+
+  <!-- SPI / RC522 -->
+  <rect x="760" y="330" width="200" height="72" rx="3" fill="#f7f9fb" stroke="#48525f" stroke-width="1.6"/>
+  <text x="860" y="353" text-anchor="middle" font-size="12" font-weight="700" fill="#12161c">RC522 RFID</text>
+  <text x="860" y="371" text-anchor="middle" font-family="monospace" font-size="10.5" fill="#48525f">3.3 V · SPI slave</text>
+  <text x="860" y="389" text-anchor="middle" font-family="monospace" font-size="10.5" fill="#48525f">RST from PCF P5</text>
+  <line x1="720" y1="340" x2="760" y2="340" stroke="#48525f" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="720" y1="366" x2="760" y2="366" stroke="#48525f" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="720" y1="392" x2="760" y2="392" stroke="#48525f" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="860" y1="402" x2="860" y2="526" stroke="#6f7b8a" stroke-width="2"/>
+
+  <!-- PCF + switched loads -->
+  <rect x="40" y="380" width="176" height="80" rx="3" fill="#eef8f9" stroke="#0a6c74" stroke-width="1.8"/>
+  <text x="56" y="403" font-size="12" font-weight="700" fill="#0a6c74">PCF8574</text>
+  <text x="56" y="420" font-family="monospace" font-size="11" fill="#48525f">0x20 · BUY THIS</text>
+  <text x="56" y="437" font-family="monospace" font-size="10.5" fill="#6f7b8a">P0 in · P1-P5 out</text>
+  <text x="56" y="452" font-family="monospace" font-size="10.5" fill="#6f7b8a">config reg 0xC1</text>
+  <line x1="128" y1="360" x2="128" y2="380" stroke="#0a6c74" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="128" y1="460" x2="128" y2="526" stroke="#6f7b8a" stroke-width="2"/>
+
+  <rect x="300" y="386" width="150" height="46" rx="3" fill="#fff" stroke="#48525f" stroke-width="1.5"/>
+  <text x="375" y="405" text-anchor="middle" font-size="11" font-weight="700">P0 · reed switch</text>
+  <text x="375" y="421" text-anchor="middle" font-family="monospace" font-size="10" fill="#6f7b8a">10k pull-up · closed=LOW</text>
+  <line x1="216" y1="409" x2="300" y2="409" stroke="#48525f" stroke-width="1.6" marker-end="url(#ar)"/>
+  <line x1="375" y1="432" x2="375" y2="526" stroke="#6f7b8a" stroke-width="1.6"/>
+
+  <g font-size="11">
+    <rect x="300" y="446" width="150" height="34" rx="3" fill="#fff" stroke="#48525f" stroke-width="1.5"/>
+    <text x="375" y="462" text-anchor="middle" font-weight="700">MOSFET → green LED</text>
+    <text x="375" y="475" text-anchor="middle" font-family="monospace" font-size="9.5" fill="#6f7b8a">P1 · 330Ω</text>
+    <rect x="474" y="446" width="150" height="34" rx="3" fill="#fff" stroke="#48525f" stroke-width="1.5"/>
+    <text x="549" y="462" text-anchor="middle" font-weight="700">MOSFET → yellow LED</text>
+    <text x="549" y="475" text-anchor="middle" font-family="monospace" font-size="9.5" fill="#6f7b8a">P2 · 330Ω</text>
+    <rect x="648" y="446" width="150" height="34" rx="3" fill="#fff" stroke="#48525f" stroke-width="1.5"/>
+    <text x="723" y="462" text-anchor="middle" font-weight="700">MOSFET → red LED</text>
+    <text x="723" y="475" text-anchor="middle" font-family="monospace" font-size="9.5" fill="#6f7b8a">P3 · 330Ω</text>
+    <rect x="300" y="490" width="324" height="34" rx="3" fill="#fff" stroke="#8a5200" stroke-width="1.5"/>
+    <text x="462" y="506" text-anchor="middle" font-weight="700">MOSFET → buzzer (5 V, active)</text>
+    <text x="462" y="519" text-anchor="middle" font-family="monospace" font-size="9.5" fill="#6f7b8a">P4 · 1N4148 flyback across coil</text>
+  </g>
+  <line x1="216" y1="409" x2="216" y2="507" stroke="#48525f" stroke-width="1.6"/>
+  <line x1="216" y1="463" x2="300" y2="463" stroke="#48525f" stroke-width="1.4"/>
+  <line x1="216" y1="507" x2="300" y2="507" stroke="#48525f" stroke-width="1.4"/>
+  <line x1="450" y1="463" x2="474" y2="463" stroke="#48525f" stroke-width="1.2"/>
+  <line x1="624" y1="463" x2="648" y2="463" stroke="#48525f" stroke-width="1.2"/>
+  <line x1="375" y1="480" x2="375" y2="526" stroke="#6f7b8a" stroke-width="1.4"/>
+  <line x1="549" y1="480" x2="549" y2="526" stroke="#6f7b8a" stroke-width="1.4"/>
+  <line x1="723" y1="480" x2="723" y2="526" stroke="#6f7b8a" stroke-width="1.4"/>
+  <line x1="462" y1="524" x2="462" y2="494" stroke="#a8550a" stroke-width="1.4" marker-end="url(#ar5)"/>
+</svg>
+<figcaption>Two I²C buses, two voltage domains. The LCD branch is the only 5 V logic path and it is isolated by the shifter. Switched loads never touch a GPIO — the expander drives MOSFET gates.</figcaption>
+</figure>
+
+<h2><span class="n">2</span>ESP8266 pin assignment</h2>
+<p class="lede">GPIO numbers are authoritative. The NodeMCU silkscreen is <em>not</em> confirmed for your board, so treat the left column as unverified until you check it against the actual module.</p>
+
+<table>
+<thead><tr><th class="pin">Silkscreen*</th><th class="pin">GPIO</th><th>Function</th><th>Dir</th><th>Voltage</th><th>Connects to</th></tr></thead>
+<tbody>
+<tr><td class="pin">D1</td><td class="pin">5</td><td>I²C SCL</td><td>bidir</td><td><span class="tag v3t">3V3</span></td><td>ADS1115, BMP280, DS3231, PCF8574, and shifter <code>LV2</code></td></tr>
+<tr><td class="pin">D2</td><td class="pin">4</td><td>I²C SDA</td><td>bidir</td><td><span class="tag v3t">3V3</span></td><td>ADS1115, BMP280, DS3231, PCF8574, and shifter <code>LV1</code></td></tr>
+<tr><td class="pin">D0</td><td class="pin">16</td><td><em>spare</em></td><td>—</td><td><span class="tag v3t">3V3</span></td><td><strong>unused</strong> — the DHT11 was removed; humidity comes from the BME280</td></tr>
+<tr><td class="pin">D5</td><td class="pin">14</td><td>SPI SCK</td><td>out</td><td><span class="tag v3t">3V3</span></td><td>RC522 SCK</td></tr>
+<tr><td class="pin">D6</td><td class="pin">12</td><td>SPI MISO</td><td>in</td><td><span class="tag v3t">3V3</span></td><td>RC522 MISO</td></tr>
+<tr><td class="pin">D7</td><td class="pin">13</td><td>SPI MOSI</td><td>out</td><td><span class="tag v3t">3V3</span></td><td>RC522 MOSI</td></tr>
+<tr><td class="pin">D8</td><td class="pin">15</td><td>RC522 SS</td><td>out</td><td><span class="tag v3t">3V3</span></td><td>RC522 SDA/SS/NSS</td></tr>
+<tr><td class="pin">D3</td><td class="pin">0</td><td><em>spare</em></td><td>—</td><td><span class="tag" style="color:#9a1c1c;border-color:#e0b4b4">boot</span></td><td>Must be HIGH at power-up — leave unused</td></tr>
+<tr><td class="pin">D4</td><td class="pin">2</td><td><em>spare</em></td><td>—</td><td><span class="tag" style="color:#9a1c1c;border-color:#e0b4b4">boot</span></td><td>Must be HIGH at power-up; also drives the onboard LED</td></tr>
+<tr><td class="pin">RX / TX</td><td class="pin">3 / 1</td><td>Serial debug</td><td>in/out</td><td><span class="tag v3t">3V3</span></td><td>Keep free — this is the 115200 baud console</td></tr>
+<tr><td class="pin">—</td><td class="pin">6–11</td><td><em>not exposed</em></td><td>—</td><td>—</td><td>GPIO9/10 are the flash interface. Do not attempt.</td></tr>
+</tbody>
+</table>
+<p class="cap">* The single most common wiring mistake on this board: on NodeMCU, silkscreen <strong>D0 is GPIO16</strong>, and <strong>GPIO0 is D3</strong>. They are different pins. Trust the GPIO number.</p>
+
+<div class="box stop">
+  <h4>Why there is no GPIO left</h4>
+  <p>Seven pins serve the three buses, and the two remaining candidates (GPIO0, GPIO2) are boot-strapped — pulling either one at power-up puts the ESP8266 into the wrong boot mode. That is the entire reason the design moves the reed switch, LEDs, buzzer and RC522 reset onto a PCF8574 expander rather than onto the MCU.</p>
+</div>
+
+<h2><span class="n">3</span>I²C bus map</h2>
+<p class="lede">All five devices share the same two wires. Four sit in the 3.3 V domain; the LCD is the only 5 V participant and is the only one behind the shifter.</p>
+
+<table>
+<thead><tr><th class="pin">Address</th><th>Device</th><th>Domain</th><th>VCC</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td class="pin">0x76</td><td>BMP280</td><td><span class="tag v3t">3V3</span></td><td>3V3</td><td>Temperature + pressure. Use 0x77 only if SDO is tied high.</td></tr>
+<tr><td class="pin">0x68</td><td>DS3231</td><td><span class="tag v3t">3V3</span></td><td>3V3</td><td>RTC. <strong>Verify the CR2032 charging path first</strong> — see §6.</td></tr>
+<tr><td class="pin">0x48</td><td>ADS1115</td><td><span class="tag v3t">3V3</span></td><td>3V3</td><td>AIN0 only. AIN1–AIN3 intentionally unused. Address from the ADDR strap.</td></tr>
+<tr><td class="pin">0x20</td><td><strong>PCF8574</strong></td><td><span class="tag v3t">3V3</span></td><td>3V3</td><td>Must be the 8-bit PCF8574. The PCF8574<strong>A</strong> answers on 0x38 and will not be found.</td></tr>
+<tr><td class="pin">0x27</td><td>LCD backpack</td><td><span class="tag v5t">5V</span></td><td>5V</td><td>Contains its own PCF8574 inside the module. Configurable via the A0/A1/A2 solder links.</td></tr>
+</tbody>
+</table>
+<p class="cap">Pull-ups: one set of 4.7 kΩ from SDA and SCL to 3V3. Most modules already carry them — if you fit a second set you halve the effective resistance, which is harmless but unnecessary. Note the pull-ups belong on the <strong>3.3 V side only</strong>; on a shifter board, pull-ups to 5 V on the LV side would fight the translator.</p>
+
+<h2><span class="n">4</span>PCF8574 channel map</h2>
+<p class="lede">P0 is the only input; P1–P5 are outputs. The configuration register is written as <code>0xC1</code>, which makes P0, P6 and P7 inputs and P1–P5 outputs.</p>
+
+<figure>
+<svg viewBox="0 0 1120 400" role="img" aria-label="PCF8574 channel map. P0 input from reed switch with 10k pull-up. P1 to P3 sink current directly for green, yellow and red LEDs. P4 drives one IRFZ44N for the buzzer. P5 drives RC522 reset directly. P6 and P7 unused.">
+  <rect width="1120" height="400" fill="#fff"/>
+  <rect x="24" y="40" width="150" height="300" rx="4" fill="#eef8f9" stroke="#0a6c74" stroke-width="2"/>
+  <text x="99" y="66" text-anchor="middle" font-size="13" font-weight="700" fill="#0a6c74">PCF8574</text>
+  <text x="99" y="83" text-anchor="middle" font-family="monospace" font-size="11" fill="#48525f">0x20</text>
+  <text x="99" y="100" text-anchor="middle" font-family="monospace" font-size="10" fill="#6f7b8a">cfg 0xC1</text>
+  <g font-family="monospace" font-size="12" font-weight="700">
+    <text x="99" y="140" text-anchor="middle" fill="#5a3ea8">P0 in</text>
+    <text x="99" y="185" text-anchor="middle" fill="#5a3ea8">P1 out</text>
+    <text x="99" y="230" text-anchor="middle" fill="#5a3ea8">P2 out</text>
+    <text x="99" y="275" text-anchor="middle" fill="#5a3ea8">P3 out</text>
+    <text x="99" y="318" text-anchor="middle" fill="#5a3ea8">P4 out</text>
+  </g>
+  <text x="99" y="332" text-anchor="middle" font-family="monospace" font-size="10" fill="#6f7b8a">P4</text>
+  <g stroke="#48525f" stroke-width="1.6" marker-end="url(#ar)">
+    <line x1="174" y1="136" x2="268" y2="136"/>
+    <line x1="174" y1="181" x2="268" y2="181"/>
+    <line x1="174" y1="226" x2="268" y2="226"/>
+    <line x1="174" y1="271" x2="268" y2="271"/>
+    <line x1="174" y1="314" x2="268" y2="314"/>
+  </g>
+
+  <!-- reed -->
+  <rect x="272" y="106" width="300" height="60" rx="3" fill="#fff" stroke="#48525f" stroke-width="1.5"/>
+  <text x="288" y="128" font-size="12" font-weight="700">Reed switch — door</text>
+  <text x="288" y="146" font-family="monospace" font-size="10.5" fill="#6f7b8a">one terminal → P0, other → GND</text>
+  <text x="288" y="160" font-family="monospace" font-size="10.5" fill="#6f7b8a">10k pull-up P0→3V3 · closed = LOW</text>
+  <line x1="422" y1="166" x2="422" y2="196" stroke="#0a6c74" stroke-width="1.5"/>
+  <text x="430" y="196" font-family="monospace" font-size="10" fill="#0a6c74">3V3 via 10k</text>
+
+  <!-- MOSFET stage -->
+  <g>
+    <rect x="272" y="212" width="440" height="150" rx="3" fill="#f7f9fb" stroke="#48525f" stroke-width="1.5"/>
+    <text x="288" y="234" font-size="12" font-weight="700">Switched loads — every one through a MOSFET</text>
+    <text x="288" y="250" font-family="monospace" font-size="10" fill="#9a1c1c">gate 100k pull-down to GND · source → GND · drain → load</text>
+
+    <g font-size="11">
+      <text x="300" y="278" font-family="monospace" font-weight="700" fill="#5a3ea8">P1</text>
+      <rect x="330" y="266" width="46" height="16" rx="2" fill="#d9dee5" stroke="#48525f"/>
+      <text x="353" y="278" text-anchor="middle" font-size="9" font-family="monospace">MOS</text>
+      <text x="388" y="278">→ 330Ω → green LED → +5V</text>
+
+      <text x="300" y="304" font-family="monospace" font-weight="700" fill="#5a3ea8">P2</text>
+      <rect x="330" y="292" width="46" height="16" rx="2" fill="#d9dee5" stroke="#48525f"/>
+      <text x="353" y="304" text-anchor="middle" font-size="9" font-family="monospace">MOS</text>
+      <text x="388" y="304">→ 330Ω → yellow LED → +5V</text>
+
+      <text x="300" y="330" font-family="monospace" font-weight="700" fill="#5a3ea8">P3</text>
+      <rect x="330" y="318" width="46" height="16" rx="2" fill="#d9dee5" stroke="#48525f"/>
+      <text x="353" y="330" text-anchor="middle" font-size="9" font-family="monospace">MOS</text>
+      <text x="388" y="330">→ 330Ω → red LED → +5V</text>
+
+      <text x="300" y="354" font-family="monospace" font-weight="700" fill="#5a3ea8">P4</text>
+      <rect x="330" y="342" width="46" height="16" rx="2" fill="#d9dee5" stroke="#48525f"/>
+      <text x="353" y="354" text-anchor="middle" font-size="9" font-family="monospace">MOS</text>
+      <text x="388" y="354">→ buzzer → +5V  (1N4148 across coil)</text>
+    </g>
+    <line x1="712" y1="230" x2="712" y2="196" stroke="#a8550a" stroke-width="1.5" marker-end="url(#ar5)"/>
+    <text x="720" y="218" font-family="monospace" font-size="10" fill="#a8550a">+5V</text>
+  </g>
+
+  <!-- P5 -->
+  <rect x="740" y="300" width="356" height="62" rx="3" fill="#eef8f9" stroke="#0a6c74" stroke-width="1.6"/>
+  <text x="756" y="322" font-size="12" font-weight="700" fill="#0a6c74">P5 → RC522 RST</text>
+  <text x="756" y="340" font-family="monospace" font-size="10.5" fill="#48525f">3V3 logic input — drives directly, no MOSFET</text>
+  <text x="756" y="355" font-family="monospace" font-size="10.5" fill="#48525f">active LOW · 50 ms pulse only at setup</text>
+  <path d="M174,318 L740,318" stroke="#48525f" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+
+  <text x="272" y="382" font-size="11" fill="#6f7b8a">P6 and P7 are configured as inputs and left unconnected.</text>
+</svg>
+<figcaption>One driver topology, four times. Gate from the expander, 100 kΩ pull-down so the load is off during boot and if I²C hangs, source to ground, load between +5 V and drain.</figcaption>
+</figure>
+
+<div class="box warn">
+  <h4>Why one MOSFET, and why not an NPN or a ULN2003A</h4>
+<p>The buzzer is the only load that needs a transistor, because it is the only one that is both inductive and over 25 mA.</p>
+<p><strong>MOSFET, not NPN:</strong> the port's 100 &micro;A HIGH is ample to charge a MOSFET gate (a few picofarads, finished in well under a microsecond, and drawing nothing thereafter) but nowhere near enough to hold an NPN base in saturation. An NPN here would give a click, not a beep.</p>
+<p><strong>TO-220, not TO-92:</strong> purely mechanical. TO-92 leads are 0.65 mm apart and line up with no perfboard hole spacing whatsoever, so it cannot be inserted without bending. TO-220 leads are 2.54 mm and drop straight into three adjacent holes. A <code>ULN2003A</code> was considered and rejected: it inverts the logic, needs four extra pull-up resistors because its Darlington inputs draw more than 100 &micro;A, and its inputs cannot be held off at boot, so the buzzer would sound on every power cycle.</p>
+</div>
+
+<h2><span class="n">5</span>Definitive connection list</h2>
+<p class="lede">Every wire, in build order. Each row names the pin, what it belongs to, and what it connects to. This section is the bench checklist — the sections above explain <em>why</em>.</p>
+
+<h3>ESP8266 — pin to purpose</h3>
+<table>
+<thead><tr><th class="pin">Pin</th><th class="pin">GPIO</th><th>Belongs to</th><th>Connects to</th><th>Domain</th></tr></thead>
+<tbody>
+<tr><td class="pin">VIN</td><td class="pin">—</td><td>Power in</td><td>USB 5 V</td><td><span class="tag v5t">5V</span></td></tr>
+<tr><td class="pin">GND</td><td class="pin">—</td><td>Power</td><td>Common ground</td><td>—</td></tr>
+<tr><td class="pin">D2</td><td class="pin">4</td><td><strong>I²C SDA</strong></td><td>I²C bus + shifter <code>LV1</code></td><td><span class="tag v3t">3V3</span></td></tr>
+<tr><td class="pin">D1</td><td class="pin">5</td><td><strong>I²C SCL</strong></td><td>I²C bus + shifter <code>LV2</code></td><td><span class="tag v3t">3V3</span></td></tr>
+<tr><td class="pin">D0</td><td class="pin">16</td><td><em>spare</em></td><td>unused — the DHT11 was removed, humidity is read from the BME280 over I²C</td></tr>
+<tr><td class="pin">D5</td><td class="pin">14</td><td><strong>RC522 SCK</strong></td><td>RC522 SCK</td><td><span class="tag v3t">3V3</span></td></tr>
+<tr><td class="pin">D6</td><td class="pin">12</td><td><strong>RC522 MISO</strong></td><td>RC522 MISO</td><td><span class="tag v3t">3V3</span></td></tr>
+<tr><td class="pin">D7</td><td class="pin">13</td><td><strong>RC522 MOSI</strong></td><td>RC522 MOSI</td><td><span class="tag v3t">3V3</span></td></tr>
+<tr><td class="pin">D8</td><td class="pin">15</td><td><strong>RC522 SS</strong></td><td>RC522 SDA/SS/NSS</td><td><span class="tag v3t">3V3</span></td></tr>
+<tr><td class="pin">D3</td><td class="pin">0</td><td><em>unused</em></td><td>— boot-strapped HIGH at power-up</td><td>—</td></tr>
+<tr><td class="pin">D4</td><td class="pin">2</td><td><em>unused</em></td><td>— boot-strapped HIGH at power-up</td><td>—</td></tr>
+<tr><td class="pin">RX / TX</td><td class="pin">3 / 1</td><td>Serial console</td><td>USB serial monitor @ 115200</td><td><span class="tag v3t">3V3</span></td></tr>
+</tbody>
+</table>
+
+<h3>I²C bus — parallel to four devices</h3>
+<table>
+<thead><tr><th>Module</th><th>Address</th><th>VCC</th><th>GND</th><th>SDA / SCL</th><th>Address straps &amp; unused pins</th></tr></thead>
+<tbody>
+<tr><td>BMP280</td><td class="pin">0x76</td><td>3V3</td><td>GND</td><td>bus</td><td><code>CSB</code>→3V3 · <code>SDO</code>→<strong>GND</strong></td></tr>
+<tr><td>DS3231</td><td class="pin">0x68</td><td>3V3</td><td>GND</td><td>bus</td><td><code>SQW</code>, <code>32K</code> unused</td></tr>
+<tr><td>ADS1115</td><td class="pin">0x48</td><td>3V3</td><td>GND</td><td>bus</td><td><code>ADDR</code>→<strong>GND</strong> · <code>ALRT</code> unused</td></tr>
+<tr><td>PCF8574</td><td class="pin">0x20</td><td>3V3</td><td>GND</td><td>bus</td><td><code>A0</code>,<code>A1</code>,<code>A2</code>→<strong>GND</strong></td></tr>
+</tbody>
+</table>
+<p class="cap">100 nF from each module's VCC to GND at the pins.</p>
+
+<h3>Level shifter and LCD — the only 5 V logic path</h3>
+<table>
+<thead><tr><th>Terminal</th><th>Connects to</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td class="pin">LV</td><td>3V3</td><td>low-voltage reference</td></tr>
+<tr><td class="pin">HV</td><td>5V</td><td>high-voltage reference</td></tr>
+<tr><td class="pin">GND</td><td>Common ground</td><td>must be the same ground as everything else</td></tr>
+<tr><td class="pin">LV1 → HV1</td><td>GPIO4 → LCD SDA</td><td>bidirectional</td></tr>
+<tr><td class="pin">LV2 → HV2</td><td>GPIO5 → LCD SCL</td><td>bidirectional</td></tr>
+<tr><td class="pin">LV3 / LV4</td><td>unused</td><td>only two channels are needed</td></tr>
+<tr><td class="pin">LCD VCC</td><td>5V</td><td>backpack supply</td></tr>
+<tr><td class="pin">LCD GND</td><td>GND</td><td>—</td></tr>
+</tbody>
+</table>
+
+<h3>PCF8574 channel assignment</h3>
+<table>
+<thead><tr><th class="pin">Ch</th><th>Direction</th><th>Belongs to</th><th>Connects to</th></tr></thead>
+<tbody>
+<tr><td class="pin">P0</td><td>input</td><td>Reed switch (door)</td><td>one terminal to P0, other to GND · 10 kΩ from P0 to 3V3 · closed = LOW</td></tr>
+<tr><td class="pin">P1</td><td>output</td><td>Green status LED</td><td>gate of MOSFET 1</td></tr>
+<tr><td class="pin">P2</td><td>output</td><td>Yellow status LED</td><td>gate of MOSFET 2</td></tr>
+<tr><td class="pin">P3</td><td>output</td><td>Red status LED</td><td>gate of MOSFET 3</td></tr>
+<tr><td class="pin">P4</td><td>output</td><td>Buzzer</td><td>gate of MOSFET 4</td></tr>
+<tr><td class="pin">P5</td><td>output</td><td>RC522 reset</td><td>RC522 <code>RST</code> direct · 3V3 logic · active LOW</td></tr>
+<tr><td class="pin">P6 / P7</td><td>input</td><td>unused</td><td>left unconnected</td></tr>
+</tbody>
+</table>
+
+<h3>Output stage — the LEDs are direct, only the buzzer gets a MOSFET</h3>
+<p class="lede">The three driver styles are <strong>not</strong> interchangeable, because the PCF8574 port is quasi-bidirectional: its HIGH state sources only about <strong>100 &micro;A</strong> while its LOW state sinks <strong>25 mA</strong>. That 250&times; asymmetry decides the wiring for each load.</p>
+<table>
+<thead><tr><th>Channel</th><th>Load</th><th>Wiring</th><th>Polarity</th></tr></thead>
+<tbody>
+<tr><td class="pin">P1</td><td>green LED</td><td>5V &rarr; anode &rarr; cathode &rarr; 330 &Omega; &rarr; <strong>pin</strong></td><td><strong>active-LOW</strong> — the pin sinks ~8 mA</td></tr>
+<tr><td class="pin">P2</td><td>yellow LED</td><td>5V &rarr; anode &rarr; cathode &rarr; 330 &Omega; &rarr; <strong>pin</strong></td><td><strong>active-LOW</strong></td></tr>
+<tr><td class="pin">P3</td><td>red LED</td><td>5V &rarr; anode &rarr; cathode &rarr; 330 &Omega; &rarr; <strong>pin</strong></td><td><strong>active-LOW</strong></td></tr>
+<tr><td class="pin">P4</td><td>buzzer</td><td>5V &rarr; buzzer <strong>+</strong> ; buzzer <strong>&minus;</strong> &rarr; drain of <code>IRFZ44N</code></td><td><strong>active-HIGH</strong> — the pin drives the gate</td></tr>
+<tr><td class="pin">P5</td><td>RC522 reset</td><td>pin &rarr; RC522 <code>RST</code> direct</td><td>active-LOW</td></tr>
+</tbody>
+</table>
+<h3>Buzzer driver — TO-220, one only</h3>
+<table>
+<thead><tr><th>Terminal</th><th>Connects to</th></tr></thead>
+<tbody>
+<tr><td class="pin">gate</td><td>PCF8574 P4</td></tr>
+<tr><td class="pin">gate</td><td>100 k&Omega; to GND — holds the buzzer silent at boot and through an I&sup2;C hang</td></tr>
+<tr><td class="pin">source</td><td>GND</td></tr>
+<tr><td class="pin">drain</td><td>buzzer &minus;</td></tr>
+<tr><td class="pin">flyback</td><td><strong>1N4148</strong> cathode to 5V, anode to drain</td></tr>
+</tbody>
+</table>
+<div class="box warn">
+  <h4>Why the LEDs need no transistor, and the buzzer does</h4>
+  <p>The LEDs are driven <em>from the rail into the pin</em>, so the pin's strong pull-down MOSFET closes the path at about 8 mA — inside the 25 mA sink rating. In the off state the weak 100 &micro;A source simply holds the LED off at a few tens of millivolts. No driver transistor is involved and the pin never sources more than 100 &micro;A.</p>
+  <p>The buzzer is different twice over. It is <strong>inductive</strong> and draws up to <strong>30 mA</strong>, which <em>exceeds</em> the 25 mA sink rating — and switching an inductive load without a flyback path spikes back into the shared 5 V rail and the I&sup2;C bus. Hence the one MOSFET and the 1N4148.</p>
+  <p>A <strong>MOSFET rather than an NPN</strong>, because the port's 100 &micro;A is ample to charge a gate (a few picofarads, done in under a microsecond) but nowhere near enough to hold an NPN base in saturation. The same 100 &micro;A is precisely what P5's TTL input needs, which is why the RC522 reset goes straight in — that is the port's intended use.</p>
+</div>
+<div class="box stop">
+  <h4>The one part substitution that will silently fail</h4>
+  <p>Use <strong>IRFZ44N</strong> or <strong>IRLZ44N</strong> — TO-220, logic-level, V<sub>gs(th)</sub> 1–2 V, so the 3.3 V HIGH turns it fully on. <strong>Do not fit an IRF540N.</strong> It is the most common MOSFET in the world and its V<sub>gs(th)</sub> is specified at 2–4 V, which means at a 3.3 V gate it is not guaranteed to conduct at all. The symptom is a buzzer that appears completely dead.</p>
+  <p>Three leads at 2.54 mm pitch drop straight into three adjacent perfboard holes. That is the reason for the TO-220 package: TO-92 leads are 0.65 mm apart and align with no perfboard hole spacing at all.</p>
+</div>
+<table>
+<thead><tr><th>Step</th><th>Do this</th><th>Expect</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Power the module at 5 V. <strong>Do not connect A0 to the divider yet.</strong></td><td>—</td></tr>
+<tr><td>2</td><td>Measure <code>A0</code> to GND with a multimeter, outdoors or in a well-ventilated room, after 5 minutes.</td><td>0.3 – 0.6 V on a 10 kΩ board</td></tr>
+<tr><td>3</td><td>Identify R<sub>L</sub> on the board — it is often marked, or trace <code>A0</code> back to GND and read the resistor.</td><td>1 k / 10 k / 22 k</td></tr>
+<tr><td>4</td><td>Connect the divider, then measure <code>AIN0</code>.</td><td>≈ 0.32 × the A0 value from step 2</td></tr>
+<tr><td>5</td><td>Run the firmware and watch the serial log for the captured baseline.</td><td><code>[MQ135] Relative baseline captured: AIN0 … mV</code></td></tr>
+</tbody>
+</table>
+<div class="box ok">
+  <h4>What the firmware now does about preheat drift</h4>
+  <p>The datasheet asks for <strong>24–48 hours</strong> of preheat before the element settles. The firmware warms up for 60 seconds — long enough to stop a cold sensor raising a false alarm, far short of a settled resistance. On its own that meant the remaining drift accumulated as a rising delta over a shift and could read as spoilage that was not there.</p>
+  <p>The firmware therefore tracks the baseline slowly (2% per averaging pass, a ~4 minute time constant) <strong>but only while the measured delta is already inside the clear threshold</strong>. That gate is what makes it safe: tracking can never walk the baseline up into a real event, because a genuine gas rise outpaces it and stops tracking on the next pass. It is RAM-only by design — persisting a tracked baseline would mean thousands of LittleFS writes a year for no benefit, since the baseline is re-captured on every cold boot.</p>
+</div>
+
+<h3>RC522 — 3.3 V only, never 5 V</h3>
+<table>
+<thead><tr><th>Terminal</th><th>Connects to</th></tr></thead>
+<tbody>
+<tr><td class="pin">3.3V</td><td>3V3</td></tr>
+<tr><td class="pin">GND</td><td>GND</td></tr>
+<tr><td class="pin">SDA / SS / NSS</td><td>GPIO15</td></tr>
+<tr><td class="pin">SCK</td><td>GPIO14</td></tr>
+<tr><td class="pin">MOSI</td><td>GPIO13</td></tr>
+<tr><td class="pin">MISO</td><td>GPIO12</td></tr>
+<tr><td class="pin">RST</td><td>PCF8574 P5</td></tr>
+<tr><td class="pin">IRQ</td><td>unused</td></tr>
+</tbody>
+</table>
+<p class="cap">This is the module most often destroyed by a 5 V miswire. It is a 3.3 V part.</p>
+
+<h2><span class="n">6</span>Power distribution</h2>
+<div class="grid g2">
+  <div class="box v5">
+    <h4>5 V rail — from USB / VIN</h4>
+    <ul>
+      <li>LCD backpack <code>VCC</code></li>
+      <li>Buzzer positive terminal</li>
+      <li>LED anodes (via series resistor)</li>
+      <li>Level shifter <code>HV</code> terminal</li>
+      <li>MQ-135 <code>VCC</code> — <em>verify its supply requirement first</em></li>
+    </ul>
+  </div>
+  <div class="box v3">
+    <h4>3.3 V rail — board regulator output</h4>
+    <ul>
+      <li>ESP8266 (its own onboard regulator)</li>
+      <li>BMP280, DS3231, ADS1115, PCF8574</li>
+      <li>RC522</li>
+      <li>I²C pull-ups, reed pull-up, gate pull-downs</li>
+      <li>Level shifter <code>LV</code> terminal</li>
+    </ul>
+  </div>
+</div>
+<div class="box stop">
+  <h4>Never join the two rails</h4>
+  <p>5 V and 3.3 V must meet only inside the level shifter. A single stray jumper between the LCD's VCC and an ESP8266 pin destroys the module. The shifter is the <em>only</em> bridge between the domains.</p>
+</div>
+<p><strong>Decoupling:</strong> 100&nbsp;nF ceramic at each module's VCC/GND, right at the pins, plus 470&nbsp;µF bulk on the 5 V rail. The ESP8266's Wi-Fi bursts draw well over 300&nbsp;mA — if the board's regulator or the USB lead is marginal, brownouts will look like random sensor faults.</p>
+
+<h2><span class="n">7</span>Pre-power safety checklist</h2>
+<div class="box stop">
+  <h4>Blocking items</h4>
+  <ul>
+    <li><strong>PCF8574 fitted and addressed 0x20.</strong> Without it the firmware latches <code>Sensor&nbsp;Fault</code> forever. Check it is the PCF8574, not the PCF8574A (0x38).</li>
+    <li><strong>DS3231 charging path.</strong> The <code>HW-084</code> board charges its cell. On a non-rechargeable CR2032 that is a safety hazard — remove the charging resistor or fit a rechargeable cell. Verify which you have.</li>
+    <li><strong>Level shifter orientation.</strong> <code>LV</code> to 3V3, <code>HV</code> to 5V, <code>GND</code> to common ground. LV/HV reversed destroys the translator.</li>
+  </ul>
+</div>
+<div class="box warn">
+  <h4>Verify before relying on it</h4>
+  <ul>
+    <li><strong>MQ-135 divider.</strong> A0 → 4.7 kΩ → ADS1115 AIN0 → 2.2 kΩ → GND. This keeps AIN0 under 3300&nbsp;mV for any input up to ~10.35&nbsp;V at A0. The resistor values are placeholders until measured.</li>
+    <li><strong>Reed switch polarity.</strong> Closed must read LOW. If your switch is normally-closed, invert the <code>REED_CLOSED_LEVEL</code> constant and re-test.</li>
+    <li><strong>Inductive reed coil.</strong> If yours has a coil rather than bare contacts, add a flyback diode with its cathode to the P0 side, anode to GND. Confirm polarity before soldering.</li>
+    <li><strong>Buzzer type — resolved.</strong> Use a <code>TMB12A05</code> (5 V active buzzer, 12 mm, ~30 mA, 2300 Hz, built-in oscillator). A <code>TMB12A12</code> is a <strong>12 V</strong> part rated 8–15 V and will be silent at 5 V; using it would require a second power supply on a USB-powered device. Because the buzzer is <em>active</em>, plain on/off from the expander is correct and no tone generator is needed in firmware.</li>
+  </ul>
+</div>
+
+<h2><span class="n">8</span>Bill of materials</h2>
+<p class="lede">Decisions taken and locked: one IRFZ44N for the buzzer only, 330 Ω LED resistors, 10 kΩ reed pull-up, 5 V MQ-135 supply, two shifter channels, charging path disabled on the DS3231.</p>
+<table class="buy">
+<thead><tr><th>Status</th><th>Qty</th><th>Part</th><th>Specification</th></tr></thead>
+<tbody>
+<tr><td><strong>Have</strong></td><td>1</td><td>Level shifter</td><td>4-channel BSS138, LV1–LV4 / HV1–HV4. Channels 1 and 2 used.</td></tr>
+<tr><td><strong>BUY</strong></td><td>2</td><td>PCF8574 module</td><td>8-bit, address 0x20. One spare. <em>Not</em> PCF8574A (0x38).</td></tr>
+<tr><td><strong>BUY</strong></td><td>2</td><td><strong>IRFZ44N</strong> (or IRLZ44N)</td><td>TO-220 N-channel, logic-level. 1 used for the buzzer + 1 spare. <strong>Never IRF540N</strong> - V<sub>gs(th)</sub> 2&ndash;4 V means it may not conduct at a 3.3 V gate. 100 k&Omega; gate pull-down, 1N4148 flyback.</td></tr>
+<tr><td><strong>BUY</strong></td><td>4</td><td>100 kΩ resistor</td><td>MOSFET gate pull-downs.</td></tr>
+<tr><td><strong>BUY</strong></td><td>3</td><td>330 Ω resistor</td><td>LED current limiting from the 5 V rail.</td></tr>
+<tr><td><strong>BUY</strong></td><td>1</td><td>1N4148 diode</td><td>Flyback across the buzzer coil.</td></tr>
+<tr><td><strong>BUY</strong></td><td>1</td><td>TMB12A05</td><td>5 V active buzzer, 12 mm. Replaces the 12 V TMB12A12.</td></tr>
+<tr><td><strong>BUY</strong></td><td>1 ea</td><td>4.7 kΩ and 2.2 kΩ</td><td>MQ-135 divider into ADS1115 AIN0.</td></tr>
+<tr><td><strong>BUY</strong></td><td>1</td><td>10 kΩ resistor</td><td>Reed pull-up on P0. Recommended for noise immunity; the PCF8574's internal 33–50 kΩ pull-up will also work.</td></tr>
+<tr><td><strong>BUY</strong></td><td>3</td><td>100 nF ceramic</td><td>Decoupling at the ESP8266 3V3 pin, the MQ-135 supply, and the 5 V rail.</td></tr>
+<tr><td><strong>BUY</strong></td><td>1</td><td>1000 µF electrolytic</td><td>Bulk capacitance on the 5 V rail. Sized for the MQ-135 heater: 33 Ω at 5 V is ~150 mA, on the same rail as the LCD backlight and buzzer, sharing a supply with the ESP8266's 300 mA+ Wi-Fi peaks.</td></tr>
+<tr><td><strong>NOT FIT</strong></td><td>0</td><td>I²C pull-up resistors</td><td>Your modules almost certainly carry them. <strong>Power off, measure SDA to 3V3</strong> — if you read ~4.7–10 kΩ they are present. Do not add a second set.</td></tr>
+
+<tr><td><strong>BUY</strong></td><td>1</td><td>1000 µF electrolytic</td><td>Bulk capacitance on the 5 V rail. Sized for the MQ-135 heater: 33 Ω at 5 V is ~150 mA, on the same rail as the LCD backlight and buzzer, sharing a supply with the ESP8266's 300 mA+ Wi-Fi peaks.</td></tr>
+<tr><td><strong>ACTION</strong></td><td>—</td><td>DS3231 module</td><td>Remove the resistor feeding the <code>VCH</code> pin, then meter-confirm no charge current into the CR2032.</td></tr>
+</tbody>
+</table>
+
+<h2><span class="n">9</span>Complete component inventory</h2>
+<p class="lede">Every part in the build, with the model or part number to buy. Where any module of a given kind will do, that is stated rather than inventing a part number.</p>
+
+<h3>Active and sensor modules</h3>
+<table>
+<thead><tr><th>Component</th><th>Model / part number</th><th>Form factor</th><th>Bus</th><th class="pin">Addr</th><th>Qty</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>MCU board</td><td><strong>ESP8266MOD</strong> on NodeMCU DevKit (v1.0 / v2 / v3)</td><td>PCB module</td><td>—</td><td class="pin">—</td><td>1</td><td>Have</td></tr>
+<tr><td>Pressure + temperature</td><td><strong>BME280</strong> (Bosch) — chip id <code>0x60</code></td><td>I²C breakout</td><td>I²C</td><td class="pin">0x76</td><td>1</td><td>Have</td></tr>
+
+<tr><td>Gas</td><td><strong>MQ-135</strong> — breakout with <code>A0</code> + <code>D0</code></td><td>4-pin module</td><td>analog</td><td class="pin">—</td><td>1</td><td>Have</td></tr>
+<tr><td>16-bit ADC</td><td><strong>ADS1115</strong> (Texas Instruments) — Adafruit 2349 or CJMCU-1115</td><td>I²C breakout</td><td>I²C</td><td class="pin">0x48</td><td>1</td><td>Have</td></tr>
+<tr><td>Real-time clock</td><td><strong>DS3231</strong> — module marked <code>HW-084</code> or <code>ZS-042</code></td><td>I²C module</td><td>I²C</td><td class="pin">0x68</td><td>1</td><td>Have</td></tr>
+<tr><td>RFID reader</td><td><strong>MFRC522</strong> 13.56 MHz kit</td><td>SPI module</td><td>SPI</td><td class="pin">—</td><td>1</td><td>Have</td></tr>
+<tr><td>Display</td><td><strong>16×2 character LCD</strong>, HD44780-compatible, with PCF8574 backpack</td><td>I²C module</td><td>I²C</td><td class="pin">0x27</td><td>1</td><td>Have</td></tr>
+<tr><td>I/O expander</td><td><strong>PCF8574</strong> — 8-bit, 8 I/O</td><td>DIP-16 module</td><td>I²C</td><td class="pin">0x20</td><td>2</td><td><strong>BUY</strong></td></tr>
+<tr><td>Level shifter</td><td>4-channel <strong>BSS138</strong> module (LV1–LV4 / HV1–HV4)</td><td>PCB module</td><td>I²C</td><td class="pin">—</td><td>1</td><td>Have</td></tr>
+<tr><td>Door sensor</td><td><strong>Reed switch</strong>, SPST normally-open, magnetic</td><td>glass tube</td><td>GPIO</td><td class="pin">—</td><td>1</td><td>Have</td></tr>
+<tr><td>Buzzer</td><td><strong>TMB12A05</strong> — 5 V <em>active</em> magnetic, 12 mm, 2300 Hz, ~30 mA</td><td>TH 12 mm</td><td>GPIO</td><td class="pin">—</td><td>1</td><td><strong>BUY</strong></td></tr>
+</tbody>
+</table>
+<p class="cap">Superseded: the <code>TMB12A12</code> is a 12 V part (8–15 V) and will not sound at 5 V. The <code>A05</code> is the 5 V member of the same family with the same footprint.</p>
+
+<h3>Discrete semiconductors</h3>
+<table>
+<thead><tr><th>Component</th><th>Model / part number</th><th>Package</th><th>Qty</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td>N-channel MOSFET</td><td><strong>IRFZ44N</strong> / IRLZ44N</td><td>TO-220</td><td>2</td><td>1 for the buzzer + 1 spare. <strong>Not IRF540N</strong> (V<sub>gs(th)</sub> 2&ndash;4 V may not conduct at 3.3 V). The three LEDs need none.</td></tr>
+<tr><td>Switching diode</td><td><strong>1N4148</strong></td><td>DO-35</td><td>1</td><td>Flyback across the buzzer coil</td></tr>
+<tr><td>Status LED — good</td><td>Green, 3 mm</td><td>TH 3 mm</td><td>1</td><td>Overall status: Fresh</td></tr>
+<tr><td>Status LED — warning</td><td>Yellow/amber, 3 mm</td><td>TH 3 mm</td><td>1</td><td>Overall status: Use Soon</td></tr>
+<tr><td>Status LED — alarm</td><td>Red, 3 mm</td><td>TH 3 mm</td><td>1</td><td>Overall status: Check Food / Sensor Fault</td></tr>
+</tbody>
+</table>
+<p class="cap">The LEDs are driven from the <strong>overall</strong> status, which is the worst of the zone reading and every registered item's storage duration. A zone reading that is fine will still show a fault LED if an item has passed its limit.</p>
+
+<h3>Resistors</h3>
+<table>
+<thead><tr><th>Value</th><th>Qty</th><th>Wattage</th><th>Function</th></tr></thead>
+<tbody>
+<tr><td>4.7 kΩ</td><td>1</td><td>1/4 W</td><td>MQ-135 divider, upper leg (A0 → AIN0)</td></tr>
+<tr><td>2.2 kΩ</td><td>1</td><td>1/4 W</td><td>MQ-135 divider, lower leg (AIN0 → GND)</td></tr>
+<tr><td>10 kΩ</td><td>1</td><td>1/4 W</td><td>Reed pull-up on P0. <em>Recommended, not required</em> — see the note below.</td></tr>
+<tr><td>100 kΩ</td><td>4</td><td>1/4 W</td><td>MOSFET gate pull-down, one per channel</td></tr>
+<tr><td>330 Ω</td><td>3</td><td>1/4 W</td><td>LED current limiting from the 5 V rail</td></tr>
+</tbody>
+</table>
+
+<div class="box ok">
+  <h4>Pull-up resistors: check before you fit any</h4>
+  <p><strong>I²C pull-ups are almost certainly already on your modules.</strong> The Adafruit BMP280 and ADS1115, most PCF8574 and DS3231 breakouts all carry 4.7–10 kΩ on SDA and SCL, usually with a solder bridge to remove them. The BSS138 shifter board carries its own for the LCD side. <strong>Power off and measure from SDA to 3V3: if you read roughly 4.7–10 kΩ, they are present and you do not need to fit any.</strong> Do not add a second set on top — four modules in parallel gives ~1.2 kΩ, which is acceptable but worth knowing.</p>
+  <p><strong>No DHT11.</strong> It has been removed: the BME280 measures humidity itself. The 10 kΩ reed pull-up is the only 10 kΩ in the build.</p>
+  <p><strong>The reed switch pull-up is the one judgement call.</strong> PCF8574 input ports have an internal pull-up of roughly 33–50 kΩ, so P0 will read HIGH with the switch open and no external resistor at all. It will work. For a bare switch on a cable sitting next to a fridge compressor, 10 kΩ is cheap insurance against noise, which is why it is listed as recommended rather than required.</p>
+</div>
+
+<h3>Capacitors</h3>
+<table>
+<thead><tr><th>Value</th><th>Qty</th><th>Type</th><th>Function</th></tr></thead>
+<tbody>
+<tr><td>100 nF</td><td>3</td><td>Ceramic X7R, marking <code>104</code></td><td>At the ESP8266 3V3 pin · at the MQ-135 supply pins · on the 5 V rail</td></tr>
+<tr><td>1000 µF</td><td>1</td><td>Electrolytic, 16 V</td><td>Bulk capacitance on the 5 V rail</td></tr>
+</tbody>
+</table>
+
+<div class="box warn">
+  <h4>Why capacitors cannot be delegated to the modules</h4>
+  <p>A resistor is a <em>static</em> property — you can point a meter at it and see whether it is there. That is why pull-ups are usually already on your modules. A capacitor and a flyback diode protect against <em>transients</em>, and by definition you cannot confirm either with a meter before it matters.</p>
+  <p><strong>Decoupling.</strong> The disturbance is created by the <strong>inductance of the wire</strong> connecting the module. Even 10 cm of hookup wire is roughly 50–100 nH, and a fast current edge across that inductance produces a voltage spike at the far end, at the pin. A cap soldered onto the module is at the wrong end of the wire to respond to it.</p>
+  <p><strong>Bulk on the 5 V rail.</strong> This belongs to the shared supply path, not to any module. Three loads fight over one USB feed: ESP8266 Wi-Fi transients above 300 mA, the MQ-135 heater at ~150 mA, and the LCD backlight plus buzzer. No sensor can buffer a transient happening at the far end of the USB cable.</p>
+  <p><strong>Only three decoupling caps are listed, not one per module.</strong> The low-current sensors draw so little that their own decoupling barely matters. The ones that count are the ESP8266 rail, the MQ-135 supply, and the 5 V bulk.</p>
+</div>
+
+<div class="box stop">
+  <h4>The one part not to economise on: the 1N4148</h4>
+  <p>A buzzer is an <strong>inductive load</strong>. Switching it off makes the collapsing magnetic field generate a spike of <code>V = L·di/dt</code> that can reach tens of volts on a 5 V rail. <strong>That spike is created by the act of switching, which happens outside the buzzer</strong> — no module can contain it, because the module has no idea when you switch it. Every buzzer datasheet assumes you will flyback it.</p>
+  <p>Without the diode the spike lands across the MOSFET drain and couples back through the shared ground and 5 V rails into every other module. In practice: sensor faults that make no sense, MCU brownouts, and eventually a dead MOSFET. On a device meant to sit unattended in a food bank, that is a reliability landmine for about two cents.</p>
+  <p><strong>Exception:</strong> a bare glass reed switch is just two contacts and stores no energy, so it needs no diode. Only an <em>inductive</em> reed coil does.</p>
+</div>
+
+<h3>Power and mechanical</h3>
+<table>
+<thead><tr><th>Item</th><th>Specification</th><th>Qty</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>Power supply</td><td>USB 5 V, 1 A minimum (ESP8266 Wi-Fi bursts exceed 300 mA)</td><td>1</td><td>Have</td></tr>
+<tr><td>Battery</td><td>CR2032 — non-rechargeable, charging path disabled</td><td>1</td><td>Have</td></tr>
+<tr><td>Breadboard or perfboard</td><td>Breadboard for the prototype, perfboard for the fixed build</td><td>1</td><td><strong>BUY</strong></td></tr>
+<tr><td>Hookup wire</td><td>22–26 AWG solid core</td><td>as needed</td><td><strong>BUY</strong></td></tr>
+<tr><td>Enclosure</td><td>ABS box, vented, sized for the cold cabinet interior</td><td>1</td><td><strong>BUY</strong></td></tr>
+</tbody>
+</table>
+
+<div class="box stop">
+  <h4>Three part substitutions that will silently break the build</h4>
+  <ul>
+    <li><strong>BME280, not BMP280 — confirmed.</strong> These modules are routinely mislabelled in both directions, and the two are <em>not</em> interchangeable. The firmware uses the <code>Adafruit_BME280</code> driver, whose <code>begin()</code> accepts chip id <code>0x60</code> only. A genuine BMP280 returns <code>0x58</code> and would be rejected. The two share the temperature and pressure register map, so swapping drivers to suit the part actually fitted is the correct fix, not a workaround.</li>
+    <li><strong>PCF8574 ≠ PCF8574A.</strong> The "A" variant answers on <code>0x38</code>. The firmware looks only at <code>0x20</code>, so the A version is invisible and the device latches <code>Sensor&nbsp;Fault</code> forever.</li>
+    <li><strong>RC522 is 3.3 V only.</strong> It is the module most often destroyed by a 5 V miswire. It is the one item in this build where giving it the "correct" 5 V rail will brick it.</li>
+  </ul>
+  <p style="margin-top:6px"><strong>Humidity now comes from the BME280.</strong> The DHT11 has been removed, so the BME280 is the only environmental sensor: temperature, pressure and humidity all come from chip id <code>0x60</code>, and one failure takes all three down. This also frees GPIO16. The one thing to know is that <code>Adafruit_BME280</code> has an empty constructor, so humidity oversampling reads <code>NAN</code> until <code>setSampling()</code> is called explicitly — the firmware does this at boot, because the alternative is a silent permanent humidity fault.</p>
+</div>
+
+<footer>
+<p>Generated from <code>FreshGuard.ino</code> — pin defines, the I²C address list, the PCF channel map and the <code>0xC1</code> configuration value are all read from the compiled source, so this document and the firmware cannot silently drift apart. GPIO numbers are authoritative; the NodeMCU silkscreen column is provisional until confirmed against your actual module.</p>
+<p>Nothing in this document has been verified on hardware. There is no bench test, no measured current draw and no confirmed board layout behind any of it.</p>
+</footer>
+
+</div>
+</body>
+</html>

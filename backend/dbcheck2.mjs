@@ -1,0 +1,11 @@
+﻿import Database from "better-sqlite3";
+const db = new Database("./data/freshguard.db", { readonly: true });
+const cols = db.prepare("PRAGMA table_info(event)").all().map(r => r.name);
+console.log("  event columns:", cols.join(", "));
+const pick = cols.includes("recorded_at") ? "recorded_at" : (cols.includes("observed_at") ? "observed_at" : "id");
+const rows = db.prepare(`SELECT type, uid, message, ${pick} AS t FROM event ORDER BY id DESC LIMIT 6`).all();
+if (!rows.length) console.log("  (event table is empty)");
+for (const r of rows) console.log(`  type=${r.type}  uid=${r.uid ?? "-"}  ${r.t}  ${String(r.message).slice(0,50)}`);
+console.log(`  rfid_scanned rows stored: ${db.prepare("SELECT COUNT(*) c FROM event WHERE type='rfid_scanned'").get().c}`);
+console.log(`  total event rows: ${db.prepare("SELECT COUNT(*) c FROM event").get().c}`);
+db.close();

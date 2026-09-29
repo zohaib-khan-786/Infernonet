@@ -1,0 +1,17 @@
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+.env
+.env.*
+!.env.example
+
+logs/
+*.log
+npm-debug.log*
+
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,43 @@
+-- Manufacturing date on a registered item.
+--
+-- An item already has store_date_epoch (when it went in) and expiry_epoch (when
+-- it must come out). The date it was MADE is a third fact, and it is the one
+-- that makes the other two meaningful for a packaged item: a bag of milk put in
+-- the fridge today with a 7 day limit is not the same 7 days as the same milk
+-- bought 4 days ago and labelled with a best-before date. Without it the backend
+-- cannot tell those two situations apart, and neither can the operator.
+--
+-- NULL means "the device did not report a manufacturing date". The wire
+-- contract sends 0 for unknown, and 0 is stored as NULL, never as a date in
+-- 1970: an unlabelled jar of homemade soup and an item whose manufacture date is
+-- genuinely the epoch are not the same fact, and conflating them would invent a
+-- shelf life nobody asserted. This matches the rule 001 states for every other
+-- nullable column - null means absent, never a sentinel.
+--
+-- SINGLE AUTHORITY, and why this migration is the only thing item registration
+-- is allowed to change in the database:
+--
+-- The device owns every item record. The backend's admin endpoint does not
+-- write this column, or any column: it publishes an `item.register` command on
+-- freshguard/{dev}/cmd and the device creates the item in its own registry,
+-- stamps its own store date, applies its own limit and then reports the item
+-- back in the next snapshot, which is the path that upserts here. A row written
+-- by the backend at dispatch time would be a second source of truth for a
+-- storage date, an exposure and a verdict - values the device is going to
+-- recompute anyway, and possibly disagree with. The column is device-reported
+-- only, exactly as status_code is.
+--
+-- This is additive, like 002's ALTER of `device`. The table is not restructured:
+-- no column is dropped, renamed, retyped or re-constrained, and every existing
+-- row keeps its identity, its revisions and its history. A database created
+-- before this file simply has NULL here, which reads as "unknown" and needs no
+-- backfill.
+--
+-- Idempotency is the migration ledger's job, not this statement's: db/index.js
+-- applies each numbered file exactly once, in filename order, inside a
+-- transaction, and records it in the `migration` table. So this is a bare ALTER,
+-- the same shape 002 uses for thresholds_rev. SQLite has no
+-- `ADD COLUMN IF NOT EXISTS`, and writing one by hand would risk diverging from
+-- the file the ledger already knows about.
+
+ALTER TABLE inventory_item ADD COLUMN manufacture_epoch INTEGER;

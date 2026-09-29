@@ -1,0 +1,29 @@
+{
+  "name": "freshguard-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "FreshGuard dashboard: an instrument panel for cold-storage food-safety monitoring. Reads the device's own verdicts; never derives one.",
+  "engines": {
+    "node": ">=24.12.0 <25"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --noEmit"
+  },
+  "dependencies": {
+    "jsqr": "^1.4.0",
+    "qrcode.react": "^4.2.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.1"
+  }
+}

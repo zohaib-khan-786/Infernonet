@@ -1,0 +1,404 @@
+/* Layout: shell, masthead, the status band, the two-column grid, panel chrome.
+ *
+ * Tokens only. The bezel has its own surface and ink ladder because
+ * --ink-primary is 1.06:1 against it and must never be used there.
+ */
+
+.shell {
+  width: 100%;
+  max-width: var(--shell-max);
+  margin-inline: auto;
+  padding: var(--space-4) var(--space-4) var(--space-7);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+@media (min-width: 60rem) {
+  .shell {
+    padding: var(--space-5) var(--space-5) var(--space-7);
+    gap: var(--space-5);
+  }
+}
+
+/* --- Masthead -------------------------------------------------------------
+ * The dark bezel. Carries identity, the device switch, and the link indicator,
+ * and stays put so the link state is always one glance away.
+ */
+
+.masthead {
+  position: sticky;
+  z-index: var(--z-sticky);
+  inset-block-start: 0;
+  /* The surface token, not an ink token. --surface-bezel is the bezel; --ink
+     meant this before the rename and now means --ink-primary, which is 1.06:1
+     against the bezel text and would make one name mean two things. */
+  background: var(--surface-bezel);
+  color: var(--ink-on-dark);
+  border-block-end: var(--hairline) solid var(--ink-primary);
+  padding-block-start: env(safe-area-inset-top);
+  /* The second of the two elevations the system budgets. */
+  box-shadow: var(--elevation-raised);
+}
+
+.masthead__inner {
+  width: 100%;
+  max-width: var(--shell-max);
+  margin-inline: auto;
+  padding: var(--space-2) var(--space-4);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+}
+
+.masthead__identity {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+  margin-inline-end: auto;
+}
+
+.masthead__mark {
+  margin: 0;
+  font-size: var(--type-readout);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-heading);
+  line-height: var(--leading-data);
+}
+
+.masthead__device {
+  font-family: var(--font-mono);
+  font-size: var(--type-meta);
+  color: var(--ink-on-dark-2);
+  overflow-wrap: anywhere;
+}
+
+.masthead__device-empty {
+  color: var(--ink-on-dark-3);
+  font-style: italic;
+  font-family: var(--font-sans);
+}
+
+.masthead__tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.masthead__switch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.masthead__switch .input {
+  background: var(--surface-bezel-well);
+  color: var(--ink-on-dark);
+  border-color: var(--rule-bezel);
+  max-width: 9rem;
+}
+
+.masthead__switch .input:hover {
+  border-color: var(--rule-bezel-strong);
+}
+
+.masthead .label {
+  color: var(--ink-on-dark-2);
+}
+
+/* Not --status-use-soon-ink: that is 2.36:1 on the bezel because it is built
+   for text on a light surface. --caution-on-dark is the bezel-legal step of the
+   same hue at 8.70:1. */
+.masthead__notice {
+  flex: 1 0 100%;
+  font-size: var(--type-micro);
+  color: var(--caution-on-dark);
+  text-wrap: pretty;
+}
+
+@media (min-width: 60rem) {
+  .masthead__inner {
+    padding-inline: var(--space-5);
+  }
+}
+
+/* --- Status band ----------------------------------------------------------
+ * The one loud element. Two annunciator plates, split by a seam, each with a
+ * tone bar, a lamp, the verdict, the backend's raw label, and what it means.
+ */
+
+.status-band {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-plate);
+  border: var(--seam);
+  border-radius: var(--radius-plate);
+  overflow: hidden;
+}
+
+.status-band__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-void);
+  border-block-end: var(--seam);
+}
+
+.status-band__title {
+  margin: 0;
+  font-size: var(--type-body);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-heading);
+}
+
+.status-band__readouts {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+/* Stacked plates need a seam between them, or the two 5px tone bars read as one
+   10px bar that changes colour halfway down. */
+.status-band__readouts > .annunciator + .annunciator {
+  border-block-start: var(--seam);
+}
+
+@media (min-width: 44rem) {
+  .status-band__readouts {
+    grid-template-columns: 1fr 1fr;
+  }
+  /* Side by side the seam runs down the page instead - but on the *inline-end*
+     of the FIRST plate, not the inline-start of the second.
+     This is the whole fix. The seam and the tone bar are two different pieces
+     of information and they were competing for one property: the rule that
+     introduced the seam wrote `border-inline-start: var(--seam)`, which is the
+     same property `.annunciator` uses for `--edge-verdict`, and at
+     `min-width: 44rem` it won on source order. Measured, the Cabinet plate
+     went from `5px solid rgb(132,28,19)` to `1px solid rgb(166,176,176)` at
+     704px, 800px and 1440px, and stayed that way for every laptop, tablet and
+     desktop. That deleted the Cabinet zone's only non-word, non-shape status
+     channel - a plate that said "Fresh" with a red bar beside it, and a plate
+     that said "Check food" with a hairline, drawn identically.
+     `border-inline-end` of plate one is the same line, on the correct side of
+     the same grid boundary, and cannot touch the tone bar. It is direction-safe:
+     the boundary between grid column one and column two is the inline-end edge
+     of the first item in both LTR and RTL. */
+  .status-band__readouts > .annunciator + .annunciator {
+    border-block-start: 0;
+  }
+  .status-band__readouts > .annunciator:first-child {
+    border-inline-end: var(--seam);
+  }
+}
+
+.status-band__foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  padding: var(--space-2) var(--space-3);
+  border-block-start: var(--seam);
+  background: var(--surface-field);
+  font-size: var(--type-meta);
+  color: var(--ink-secondary);
+}
+
+.status-band__stat {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.status-band__stat-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--ink-primary);
+}
+
+/* --- One annunciator readout ----------------------------------------------
+ * --edge-verdict is the 5px solid bar: this element is the device telling you a
+ * verdict about food. Nothing may overwrite it - the 2-up seam is a border on
+ * the other edge of the other plate for exactly that reason (see the 44rem
+ * query above). The device and transport banners in components.css use
+ * --edge-caution and --edge-neutral instead, and that difference is
+ * deliberate.
+ */
+
+.annunciator {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-3) var(--space-4) var(--space-3);
+  border-inline-start: var(--edge-verdict);
+}
+
+.annunciator__lamp {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: 2.75rem;
+  padding-block-start: 0.15rem;
+  color: var(--tone-ink, var(--status-informational-ink));
+}
+
+.annunciator__body {
+  min-width: 0;
+}
+
+.annunciator__scope {
+  font-size: var(--type-meta);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-secondary);
+  letter-spacing: var(--tracking-label);
+}
+
+.annunciator__verdict {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  margin-block-start: 0.15rem;
+}
+
+.annunciator__label {
+  margin: 0;
+  font-size: var(--type-verdict);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-display);
+  color: var(--tone-ink, var(--ink-primary));
+  text-wrap: balance;
+}
+
+.annunciator__token {
+  padding: 0.15rem 0.35rem;
+  background: var(--tone-tint, var(--status-informational-tint));
+  border: var(--hairline) solid var(--tone-edge, var(--status-informational-edge));
+  border-radius: var(--radius-control);
+  font-size: var(--type-micro);
+  color: var(--tone-ink, var(--status-informational-ink));
+  white-space: nowrap;
+}
+
+.annunciator__meaning {
+  margin-block-start: var(--space-2);
+  font-size: var(--type-small);
+  color: var(--ink-secondary);
+  max-inline-size: 46ch;
+  text-wrap: pretty;
+}
+
+/* --- Two-column body ------------------------------------------------------ */
+
+.columns {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+@media (min-width: 68rem) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr) var(--rail-width);
+    gap: var(--space-5);
+  }
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+@media (min-width: 68rem) {
+  .column {
+    gap: var(--space-5);
+  }
+}
+
+/* --- Panel chrome ---------------------------------------------------------
+ * A seam and a header strip. No shadow, no radius beyond 3px, no hover lift:
+ * the surface is the same everywhere so the structure carries the hierarchy.
+ */
+
+.panel {
+  background: var(--surface-plate);
+  border: var(--seam);
+  border-radius: var(--radius-plate);
+  scroll-margin-block-start: 4.5rem;
+}
+
+.panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-3);
+  border-block-end: var(--seam);
+  background: var(--surface-field);
+  border-start-start-radius: var(--radius-plate);
+  border-start-end-radius: var(--radius-plate);
+}
+
+.panel__title {
+  margin: 0;
+  font-size: var(--type-body);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-heading);
+}
+
+.panel__sub {
+  font-size: var(--type-meta);
+  color: var(--ink-tertiary);
+}
+
+.panel__tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-inline-start: auto;
+}
+
+.panel__body {
+  padding: var(--space-3);
+}
+
+.panel__body--flush {
+  padding: 0;
+}
+
+.panel__note-strip {
+  padding: var(--space-3);
+  background: var(--status-sensor-fault-tint);
+  border-block-end: var(--seam);
+  font-size: var(--type-meta);
+  color: var(--ink-secondary);
+  text-wrap: pretty;
+}
+
+.panel__note-strip--spaced {
+  border: var(--hairline) solid var(--status-sensor-fault-edge);
+  border-radius: var(--radius-control);
+  margin-block-end: var(--space-3);
+}
+
+.panel__foot {
+  padding: var(--space-3);
+  border-block-start: var(--seam);
+  background: var(--surface-field);
+  border-end-start-radius: var(--radius-plate);
+  border-end-end-radius: var(--radius-plate);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}

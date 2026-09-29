@@ -1,0 +1,531 @@
+/* =============================================================================
+ * Freshness verdict — the two evidence layers, and the cabinet that measures them.
+ * -----------------------------------------------------------------------------
+ * ADDITIVE ONLY, same contract as pages.css: new class names, no edits to tokens.css
+ * or shell.css, and no raw hex anywhere. Every value below is a token.
+ *
+ * WHERE THE EXISTING VOCABULARY IS REUSED RATHER THAN INVENTED
+ * -----------------------------------------------------------------------------
+ *   .panel, .panel__head/__title/__sub/__body/__body--flush/__tools/__note-strip
+ *   .btn, .btn--quiet, .chip, .chip--plain
+ *   .banner, .banner__mark/__kind/__title/__body     (via data-kind="device")
+ *   .notice, .notice__kind/__title/__body, .mark--sm, .mark--lg
+ *   .readings, .reading, .reading__label/__value/__number/__number--absent
+ *   .reading__unit, .reading__foot, .reading--flag
+ *   .meter, .meter--withheld, .meter__track/__fill/__notch/__scale/__value
+ *   .status-band__stat, .status-band__stat-value, .label
+ *   .withheld__value, .withheld__note, .note, .hint, .num, .code-ish inline nums
+ *
+ * ===========================================================================
+ * THE ONE RULE THE LAYOUT EXISTS TO ENFORCE
+ * ===========================================================================
+ *
+ * Layer 1 (the item's own dates) and layer 2 (an inference from cabinet air) must
+ * be separable at a glance, in greyscale, in forced colors, and in a screenshot.
+ * A reader who cannot tell which half is certain will either over-trust the
+ * cabinet half or ignore the date half, and both are wrong.
+ *
+ * Four signals carry the difference, and all four are needed because each one
+ * alone has a failure mode:
+ *
+ *   1. EDGE TREATMENT — a SHAPE of rule, not a hue. Layer 1 gets a 3px SOLID rule;
+ *      layer 2 gets a 6px DOUBLE rule. A double rule is how this instrument marks
+ *      a caution lamp differently from an alarm lamp, and it is the same device
+ *      the banners already use for "about the monitor, not about the food". It
+ *      survives greyscale and colour blindness, and `forced-colors` leaves
+ *      border-style alone.
+ *
+ *   2. SURFACE — layer 1 is carved into the card (`--surface-void`), layer 2 sits
+ *      raised on it (`--surface-field`). The certain half reads as part of the
+ *      item; the inferred half reads as a separate plate bolted on beside it.
+ *
+ *   3. AN EYEBROW IN WORDS — "Layer 1 of 2 · certain" and "Layer 2 of 2 ·
+ *      inferred", in every card, on every render. The edges are never the only
+ *      thing carrying it, which is the same discipline the banners document.
+ *
+ *   4. A SEAM BETWEEN THEM, always visible. Not a tab, not a toggle, not a
+ *      disclosure. A reader who only ever opened the first tab would be reading
+ *      one layer and believing it was both.
+ *
+ * `.layer__attribution` is deliberately the most prominent thing in layer 2. It
+ * is the SRS 1.6 (x) sentence, and it is the only thing standing between a
+ * screenshot of this card and a per-item temperature claim.
+ * ============================================================================= */
+
+/* --- The list ------------------------------------------------------------- */
+
+.verdict-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+@media (min-width: 68rem) {
+  .verdict-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+/* --- One item's card ------------------------------------------------------ */
+
+/* The card's own edge is the VERDICT edge — a 5px solid bar in the verdict's
+ * tone. It is the one place on this surface where a food verdict is allowed to
+ * wear a food verdict's treatment, because it IS one. */
+.verdict-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--surface-void);
+  border: var(--seam);
+  border-inline-start: var(--edge-verdict);
+  border-radius: var(--radius-plate);
+  min-inline-size: 0;
+}
+
+.verdict-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+}
+
+.verdict-card__id {
+  min-inline-size: 0;
+}
+
+.verdict-card__name {
+  margin: 0;
+  font-size: var(--type-body);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-heading);
+  color: var(--tone-ink, var(--ink-primary));
+  overflow-wrap: anywhere;
+}
+
+.verdict-card__uid {
+  margin-block-start: 0.1rem;
+  font-family: var(--font-mono);
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+  letter-spacing: var(--tracking-label);
+  overflow-wrap: anywhere;
+}
+
+.verdict-card__status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.verdict-card__meaning,
+.verdict-card__reason {
+  margin: 0;
+  font-size: var(--type-small);
+  line-height: var(--leading-body);
+  color: var(--ink-primary);
+  max-inline-size: 68ch;
+  text-wrap: pretty;
+}
+
+.verdict-card__reason {
+  color: var(--ink-secondary);
+  font-style: italic;
+}
+
+/* `insufficient_data`, said out loud.
+ *
+ * The hatched diamond is the mark the design system reserves for "could not
+ * evaluate" — the same one the device uses for Sensor Fault / Data Unavailable —
+ * so this block can never be mistaken for the `fresh` block above it, and the
+ * 1px neutral rule is the edge that says "no finding here" rather than the 5px
+ * verdict bar. */
+.verdict-card__insufficient {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3);
+  font-size: var(--type-small);
+  line-height: var(--leading-body);
+  color: var(--ink-primary);
+  background: var(--status-sensor-fault-tint);
+  border: var(--hairline) solid var(--status-sensor-fault-edge);
+  border-inline-start: var(--edge-neutral);
+  border-radius: var(--radius-control);
+  max-inline-size: 76ch;
+  text-wrap: pretty;
+}
+
+.verdict-card__insufficient[data-tone='unknown'] {
+  color: var(--status-sensor-fault-ink);
+}
+
+.verdict-card__insufficient strong {
+  color: var(--ink-primary);
+}
+
+/* --- The two evidence blocks ---------------------------------------------- */
+
+.verdict-card__layers {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+  /* The seam between the two halves. Always drawn, never collapsed. */
+  background: var(--rule-hairline);
+  border: var(--seam);
+  border-radius: var(--radius-control);
+  padding: 1px;
+}
+
+.layer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  min-inline-size: 0;
+}
+
+/* LAYER 1 — carved into the card, solid edge. It is part of the item. */
+.layer[data-layer='date'] {
+  background: var(--surface-void);
+  border-inline-start: 3px solid var(--tone-edge, var(--rule-strong));
+}
+
+/* LAYER 2 — a plate on top of the card, DOUBLE edge, one step lighter. The double
+ * rule is the instrument-caution family, so the block cannot be read as a verdict
+ * about the food even when its condition happens to be a real finding. */
+.layer[data-layer='cabinet'] {
+  background: var(--surface-field);
+  border-inline-start: var(--edge-caution);
+}
+
+/* The hatch. Decorative, on the header strip only, and it never sits behind text,
+ * so it costs no contrast. It is the same "this plate is not a normal reading"
+ * signal the meter uses for a withheld value. */
+.layer[data-layer='cabinet'] > .layer__head {
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgb(145 164 184 / 0.09) 0 5px,
+    transparent 5px 10px
+  );
+}
+
+.layer__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: var(--space-2);
+  margin: calc(var(--space-2) * -1) calc(var(--space-2) * -1) 0;
+  border-block-end: var(--seam);
+}
+
+.layer__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  font-size: var(--type-micro);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+.layer__title {
+  margin: 0;
+  font-size: var(--type-small);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-primary);
+  letter-spacing: var(--tracking-heading);
+  text-wrap: balance;
+}
+
+.layer__verdict {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.layer__verdict-label {
+  font-size: var(--type-meta);
+  color: var(--ink-secondary);
+}
+
+.layer__forced {
+  margin: 0;
+  font-size: var(--type-micro);
+  font-weight: var(--weight-semibold);
+  color: var(--tone-ink, var(--ink-primary));
+}
+
+.layer__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.layer__note,
+.layer__reason,
+.layer__caveat {
+  margin: 0;
+  font-size: var(--type-micro);
+  line-height: 1.5;
+  color: var(--ink-secondary);
+  max-inline-size: 68ch;
+  text-wrap: pretty;
+}
+
+.layer__reason {
+  color: var(--ink-primary);
+}
+
+.layer__caveat {
+  font-style: italic;
+  color: var(--ink-tertiary);
+}
+
+/* THE ATTRIBUTION SENTENCE.
+ *
+ * The most prominent type in layer 2, on its own tinted plate, with a rule above
+ * it. It is not small print and it is not grey: this is the sentence that makes
+ * the block an inference rather than a measurement, and burying it is how a card
+ * gets screenshotted into a per-item temperature claim.
+ *
+ * No `[data-collapsed]`, no `[hidden]`, no `max-height`, no disclosure here. If
+ * this ever becomes hideable, the feature is broken. */
+.layer__attribution {
+  margin: var(--space-1) 0 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--type-small);
+  line-height: var(--leading-prose);
+  color: var(--ink-primary);
+  background: var(--status-informational-tint);
+  border: var(--hairline) solid var(--status-informational-edge);
+  border-inline-start: var(--edge-caution);
+  border-radius: var(--radius-control);
+  max-inline-size: 72ch;
+  text-wrap: pretty;
+}
+
+/* The fact grid inside a layer. Reuses `.label` and the mono numeral convention. */
+.layer__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--space-2) var(--space-3);
+  margin: 0;
+}
+
+.layer__fact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-inline-size: 0;
+}
+
+.layer__fact dt {
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+  letter-spacing: var(--tracking-label);
+}
+
+.layer__fact dd {
+  margin: 0;
+  font-size: var(--type-small);
+  color: var(--ink-primary);
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+
+/* --- The device's own, non-authoritative ---------------------------------- */
+
+/* The plain diamond and the blue administrative slate, deliberately NOT a verdict
+ * treatment: a device's guess is not a finding about food and must not borrow the
+ * shape of one. Same class of reasoning as `LANE_TREATMENT` in lib/status.ts. */
+.provisional {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  background: var(--tone-tint);
+  border: var(--hairline) solid var(--tone-edge);
+  border-inline-start: var(--edge-neutral);
+  border-radius: var(--radius-control);
+}
+
+.provisional__kind {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  font-size: var(--type-micro);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tone-ink);
+}
+
+.provisional__value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.provisional__label {
+  font-size: var(--type-small);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-primary);
+}
+
+.provisional__note {
+  margin: 0;
+  font-size: var(--type-micro);
+  line-height: 1.5;
+  color: var(--ink-secondary);
+  max-inline-size: 72ch;
+  text-wrap: pretty;
+}
+
+/* --- The measured half: the cabinet ---------------------------------------- */
+
+.cabinet-conditions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3) var(--space-4);
+}
+
+.cabinet-conditions__title {
+  margin: 0;
+  font-size: var(--type-body);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-heading);
+  color: var(--ink-primary);
+}
+
+.cabinet-conditions__reason {
+  margin: var(--space-3) 0 0;
+}
+
+.cabinet-subhead {
+  margin: var(--space-4) 0 0;
+  font-size: var(--type-meta);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  padding-block-end: var(--space-1);
+  border-block-end: var(--seam);
+}
+
+/* Reuses `.status-band__stat` for the value/label pairs, on the panel field face. */
+.cabinet-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  padding: var(--space-3);
+  background: var(--surface-field);
+  border: var(--seam);
+  border-radius: var(--radius-control);
+}
+
+.cabinet-stats--honesty {
+  align-items: center;
+}
+
+.cabinet-cell__reason {
+  margin: var(--space-1) 0 0;
+  font-size: var(--type-micro);
+  line-height: 1.45;
+  color: var(--ink-secondary);
+  max-inline-size: 60ch;
+  text-wrap: pretty;
+}
+
+.cabinet-cell__limit {
+  margin: 0.1rem 0 0;
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+}
+
+/* A gap, a missing input, or a limit nobody asked about. Always a diamond and
+ * always words: an absence of a measurement must never wear the shape of a
+ * measurement, and never the tone of a finding. */
+.cabinet-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--type-small);
+  line-height: var(--leading-body);
+  color: var(--ink-primary);
+  background: var(--surface-field);
+  border-inline-start: var(--edge-neutral);
+  border-radius: var(--radius-control);
+  max-inline-size: 76ch;
+  text-wrap: pretty;
+}
+
+.cabinet-note[data-tone='ok'],
+.cabinet-note[data-tone='unknown'],
+.cabinet-note[data-tone='admin'] {
+  color: var(--tone-ink, var(--ink-primary));
+}
+
+/* --- The scope-of-the-claim notice ------------------------------------------ */
+
+/* `data-kind="scope"`: a statement about what the verdict above IS, not a finding.
+ * Same reasoning as `data-kind="service"` — the disclaimer is not a verdict, so
+ * it may not wear a verdict's edge — but the blue-slate is wrong here too, because
+ * this is not a fault in the service. It is the scope of every claim on the panel,
+ * so it takes the neutral ink and the 6px DOUBLE rule, which is the shape this
+ * design system reserves for "read this before the numbers". */
+.notice[data-kind='scope'] {
+  --edge-verdict: 6px double var(--status-informational-edge);
+  background: var(--status-informational-tint);
+  border-color: var(--status-informational-edge);
+}
+
+/* --- Forced colors --------------------------------------------------------- */
+
+/* Every distinction the layer split relies on is carried by a border-style, a
+ * surface, an SVG mark or a word — never by a hue alone. Forced colors replaces
+ * `background-color` and `border-color`, so the two things it would flatten are
+ * (a) the solid-vs-double edge, which it preserves, and (b) the hatch on layer
+ * 2's header, which it drops. The border-inline widths are widened so a 3px solid
+ * and a 6px double stay distinguishable when colour is gone. */
+@media (forced-colors: active) {
+  .layer[data-layer='date'] {
+    border-inline-start: 4px solid CanvasText;
+  }
+
+  .layer[data-layer='cabinet'] {
+    border-inline-start: 4px double CanvasText;
+  }
+
+  .layer[data-layer='cabinet'] > .layer__head {
+    background-image: repeating-linear-gradient(135deg, CanvasText 0 2px, Canvas 2px 8px);
+    forced-color-adjust: none;
+  }
+
+  .layer__attribution {
+    border-inline-start: 4px double CanvasText;
+  }
+}
+
+/* --- Motion ---------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .layer[data-layer='cabinet'] > .layer__head {
+    background-image: none;
+  }
+}

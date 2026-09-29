@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FreshGuard — Bench Build Sheet</title>
+<style>
+  @page { size: A4 portrait; margin: 12mm 11mm; }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:#fff;color:#111;
+    font:10.5pt/1.4 "Segoe UI",-apple-system,Roboto,Helvetica,Arial,sans-serif;
+  }
+  .sheet{max-width:190mm;margin:0 auto;padding:10mm 0}
+  h1{font-size:17pt;margin:0 0 1mm;letter-spacing:-.2pt}
+  .sub{font-size:8.5pt;color:#555;margin:0 0 4mm}
+  h2{
+    font-size:10.5pt;margin:5mm 0 2mm;padding:1.1mm 2mm;
+    background:#111;color:#fff;letter-spacing:.3pt;text-transform:uppercase;
+  }
+  table{width:100%;border-collapse:collapse;margin:1.5mm 0 2.5mm;font-size:8.7pt}
+  th,td{text-align:left;padding:1.1mm 1.6mm;border-bottom:.4pt solid #ccc;vertical-align:top}
+  th{background:#f0f0f0;font-size:7.4pt;text-transform:uppercase;letter-spacing:.5pt;
+     border-bottom:.7pt solid #111;font-weight:700}
+  .tick{width:6mm;text-align:center;font-size:12pt;line-height:1;padding:0}
+  .mono,.m{font-family:Consolas,"Cascadia Mono",monospace}
+  .p{font-size:7.6pt;color:#666;font-style:italic;margin:.5mm 0 2.5mm}
+  ol{margin:1mm 0 2.5mm;padding-left:5mm}
+  li{margin:1.3mm 0}
+  .step{border:.5pt solid #bbb;border-left:2.5pt solid #111;padding:1.8mm 2.4mm;margin:1.8mm 0;
+        page-break-inside:avoid;break-inside:avoid}
+  .step h3{margin:0 0 1mm;font-size:9.2pt}
+  .step p{margin:.6mm 0}
+  .warn{border:.5pt solid #111;border-left:2.5pt solid #a00;background:#fdf3f3;
+        padding:1.8mm 2.4mm;margin:1.8mm 0;page-break-inside:avoid}
+  .warn h3{margin:0 0 1mm;font-size:9.2pt;color:#a00}
+  .ok{border:.5pt solid #111;border-left:2.5pt solid #060;background:#f1f8f3;
+      padding:1.8mm 2.4mm;margin:1.8mm 0;page-break-inside:avoid}
+  .ok h3{margin:0 0 1mm;font-size:9.2pt;color:#060}
+  .exp{font-family:Consolas,monospace;font-size:7.4pt;background:#f4f4f4;
+       border-left:1.5pt solid #999;padding:1.2mm 2mm;margin:1.2mm 0;white-space:pre-wrap}
+  .sig{border-top:.7pt solid #111;margin-top:3mm;padding-top:2mm;font-size:8pt;color:#444}
+  .sig table{font-size:8pt;margin-top:2mm}
+  footer{margin-top:4mm;padding-top:2mm;border-top:.5pt solid #bbb;font-size:7.4pt;color:#666}
+  @media print{ body{font-size:10pt} .noprint{display:none} }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+<h1>FreshGuard — Bench Build Sheet</h1>
+<p class="sub">ESP8266MOD cold-storage food-safety monitor · work top-down, power up in stages, verify before adding the next stage · full reference: <span class="m">docs/WIRING_DIAGRAM.html</span></p>
+
+<h2>A · Parts check — do not start until every box is ticked</h2>
+<table>
+<thead><tr><th class="tick"></th><th>Part</th><th>Model / part number</th><th>Count</th><th>Check before building</th></tr></thead>
+<tbody>
+<tr><td class="tick">&#9744;</td><td>MCU board</td><td class="m">ESP8266MOD</td><td>1</td><td>NodeMCU. Note the silkscreen — trust GPIO numbers, not D-labels</td></tr>
+<tr><td class="tick">&#9744;</td><td>I/O expander</td><td class="m">PCF8574</td><td>2</td><td><strong>Must be PCF8574 (0x20), not PCF8574A (0x38)</strong></td></tr>
+<tr><td class="tick">&#9744;</td><td>Level shifter</td><td class="m">4-ch BSS138</td><td>1</td><td>Bidirectional, has LV1–LV4 / HV1–HV4</td></tr>
+<tr><td class="tick">&#9744;</td><td>Temperature + pressure</td><td class="m">BME280</td><td>1</td><td><strong>BME280, chip id 0x60</strong> — a real BMP280 (0x58) is rejected by the driver</td></tr>
+<tr><td class="tick">&#9744;</td><td><em>Humidity</em></td><td class="m">removed</td><td>0</td><td><strong>DHT11 no longer fitted</strong> - the BME280 measures humidity itself, and GPIO16 is now spare</td></tr>
+<tr><td class="tick">&#9744;</td><td>Gas</td><td class="m">MQ-135</td><td>1</td><td>4-pin breakout with A0 and D0</td></tr>
+<tr><td class="tick">&#9744;</td><td>ADC</td><td class="m">ADS1115</td><td>1</td><td>Adafruit 2349 or CJMCU-1115</td></tr>
+<tr><td class="tick">&#9744;</td><td>RTC</td><td class="m">DS3231</td><td>1</td><td><strong>Charging path must be disabled</strong> — see stage D</td></tr>
+<tr><td class="tick">&#9744;</td><td>RFID</td><td class="m">MFRC522</td><td>1</td><td>13.56 MHz kit · <strong>3.3 V only</strong></td></tr>
+<tr><td class="tick">&#9744;</td><td>Display</td><td class="m">16×2 LCD + PCF8574 backpack</td><td>1</td><td>Address 0x27 · 5 V supply</td></tr>
+<tr><td class="tick">&#9744;</td><td>Door sensor</td><td class="m">Reed switch, SPST-NO</td><td>1</td><td>Magnetic type</td></tr>
+<tr><td class="tick">&#9744;</td><td>Buzzer</td><td class="m">TMB12A05</td><td>1</td><td><strong>5 V</strong> active, 12 mm. The A12 is 12 V and will not sound</td></tr>
+<tr><td class="tick">&#9744;</td><td>MOSFET</td><td class="m">IRFZ44N</td><td>2</td><td><strong>TO-220 logic-level. Buzzer only + 1 spare.</strong> NEVER IRF540N &mdash; it will not conduct at a 3.3 V gate. The three LEDs need no transistor.</td></tr>
+<tr><td class="tick">&#9744;</td><td>Diode</td><td class="m">1N4148</td><td>1</td><td>DO-35 · buzzer flyback</td></tr>
+<tr><td class="tick">&#9744;</td><td>Resistors 4.7 kΩ</td><td class="m">1/4 W</td><td>1</td><td>MQ divider upper leg</td></tr>
+<tr><td class="tick">&#9744;</td><td>Resistors 2.2 kΩ</td><td class="m">1/4 W</td><td>1</td><td>MQ divider lower leg</td></tr>
+<tr><td class="tick">&#9744;</td><td>Resistors 10 kΩ</td><td class="m">1/4 W</td><td>1</td><td>Reed pull-up only — recommended, the PCF8574 has an internal one</td></tr>
+<tr><td class="tick">&#9744;</td><td>Resistors 330 Ω</td><td class="m">1/4 W</td><td>3</td><td>LED current limiting</td></tr>
+<tr><td class="tick">&#9744;</td><td>Capacitors 100 nF</td><td class="m">ceramic X7R, 104</td><td>3</td><td>ESP8266 3V3 pin · MQ-135 supply · 5 V rail</td></tr>
+<tr><td class="tick">&#9744;</td><td>Bulk capacitor</td><td class="m">1000 µF, 16 V</td><td>1</td><td>On the 5 V rail</td></tr>
+<tr><td class="tick">&#9744;</td><td>LEDs</td><td>green · yellow · red, 3 mm</td><td>3</td><td>Indicator colours</td></tr>
+<tr><td class="tick">&#9744;</td><td>Supply</td><td class="m">USB 5 V, 1 A min</td><td>1</td><td>Wi-Fi bursts exceed 300 mA</td></tr>
+<tr><td class="tick">&#9744;</td><td>Tools</td><td>multimeter, side cutters, solderless breadboard</td><td>—</td><td>Meter is mandatory, not optional</td></tr>
+</tbody>
+</table>
+
+<h2>B · Before first power</h2>
+
+<div class="ok">
+  <h3>Do not fit these — your modules already have them</h3>
+  <table style="margin-bottom:0">
+    <thead><tr><th>Part</th><th>Why it is unnecessary</th><th>How to confirm</th></tr></thead>
+    <tbody>
+    <tr><td>I²C pull-ups</td><td>BME280, ADS1115, most PCF8574 and DS3231 breakouts already carry 4.7–10 kΩ on SDA/SCL. The BSS138 board carries its own for the LCD side.</td><td><strong>Power off.</strong> Measure SDA to 3V3. ~4.7–10 kΩ means they are fitted. Do not add a second set.</td></tr>
+    
+    </tbody>
+  </table>
+</div>
+
+<div class="warn">
+  <h3>Do not economise on these three</h3>
+  <ol>
+    <li><strong>1N4148 across the buzzer.</strong> A buzzer is an inductive load; switching it off spikes to tens of volts on a 5 V rail. That spike is created <em>outside</em> the buzzer, by your switching, so no module can contain it. Without it you get unexplainable sensor faults, brownouts and eventually a dead MOSFET.</li>
+    <li><strong>1000 µF on the 5 V rail.</strong> Three loads share one USB feed: ESP8266 Wi-Fi spikes over 300 mA, the MQ-135 heater at ~150 mA, and the LCD plus buzzer. This belongs to the supply path, not to any module.</li>
+    <li><strong>The 100 nF decoupling.</strong> The disturbance comes from the inductance of the <em>wire</em>, so a cap soldered to the module is at the wrong end of it to respond.</li>
+  </ol>
+</div>
+
+<div class="warn">
+  <h3>Blocking items — resolve all four</h3>
+  <ol style="margin-bottom:0">
+    <li><strong>PCF8574 fitted.</strong> Without it the firmware reports <span class="m">Sensor Fault</span> permanently and never produces a food verdict.</li>
+    <li><strong>DS3231 charging disabled.</strong> On the <span class="m">HW-084</span>/<span class="m">ZS-042</span> boards, remove the resistor feeding the DS3231 <span class="m">VCH</span> pin. Confirm with a meter that no current flows into a non-rechargeable CR2032.</li>
+    <li><strong>Level shifter orientation.</strong> <span class="m">LV</span> → 3V3, <span class="m">HV</span> → 5V, <span class="m">GND</span> → common ground. LV/HV reversed destroys the translator.</li>
+    <li><strong>No 5 V on any GPIO.</strong> Trace it once by hand before applying power. The ESP8266 is 3.3 V only and there is no protection.</li>
+  </ol>
+</div>
+
+<div class="ok">
+  <h4 style="font-size:9pt;margin:0 0 1mm">One clarification, because it trips up almost everyone</h4>
+  <p style="margin:0">The <strong>I²C bus is not a component</strong> — it is the single shared SDA + SCL wire pair running from GPIO4/GPIO5. Five devices hang off it: BME280 (0x76), DS3231 (0x68), ADS1115 (0x48), the expander PCF8574 (0x20), and — through the level shifter — your LCD backpack (0x27). The RC522 is on a separate SPI bus, and the LEDs and buzzer are plain switch outputs, and only the buzzer has a transistor. The DHT11 is gone - humidity now comes off the BME280 on that same I2C bus, which frees GPIO16.<br>
+  And note there are <strong>two PCF8574 chips</strong>, unrelated to each other: the one already soldered inside your LCD at 0x27, and the separate expander module you are buying at 0x20.</p>
+</div>
+
+<h2>C · Build order — one stage at a time</h2>
+
+<div class="step">
+  <h3>Stage 1 · 3.3 V I²C bus</h3>
+<p>Wire SDA and SCL as a shared pair to <strong>BME280, DS3231, ADS1115, PCF8574</strong>. Every VCC to 3V3, every GND to common ground. Fit 100 nF at each module. Address straps: BME280 <span class="m">CSB</span>→3V3 and <span class="m">SDO</span>→GND (0x76) · ADS1115 <span class="m">ADDR</span>→GND (0x48) · PCF8574 <span class="m">A0/A1/A2</span>→GND (0x20).</p>
+<p class="p">Add 4.7 kΩ pull-ups SDA→3V3 and SCL→3V3 only if your modules carry none.</p>
+</div>
+
+<div class="step">
+  <h3>Stage 2 &middot; (removed)</h3>
+  <p>This stage used to wire the DHT11 to GPIO16. The DHT11 is <strong>removed</strong> - the BME280 measures humidity over the I2C bus you already built in stage 1, so nothing is wired here. <strong>GPIO16 (silkscreen D0) is spare</strong> and is the only non-boot-strapped pin the ESP8266 has to spare.</p>
+  <p class="p">Reminder from stage 1: on NodeMCU, silkscreen D0 is GPIO16 and GPIO0 is D3. Different pins.</p>
+</div>
+
+<div class="step">
+  <h3>Stage 3 · RC522 on SPI</h3>
+<p><span class="m">3.3V</span>→3V3, <span class="m">GND</span>→GND, <span class="m">SS/NSS</span>→GPIO15, <span class="m">SCK</span>→GPIO14, <span class="m">MOSI</span>→GPIO13, <span class="m">MISO</span>→GPIO12, <span class="m">RST</span>→PCF8574 P5, <span class="m">IRQ</span> unused.</p>
+<p class="p">Silkscreen D5=GPIO14, D6=GPIO12, D7=GPIO13, D8=GPIO15.</p>
+</div>
+
+<div class="step">
+  <h3>Stage 4 · Level shifter and LCD</h3>
+<p><span class="m">LV</span>→3V3, <span class="m">HV</span>→5V, <span class="m">GND</span>→common GND. <span class="m">LV1</span>←GPIO4 (SDA) to <span class="m">HV1</span>→LCD SDA. <span class="m">LV2</span>←GPIO5 (SCL) to <span class="m">HV2</span>→LCD SCL. LCD <span class="m">VCC</span>→5V, <span class="m">GND</span>→GND. <span class="m">LV3/LV4</span> unused.</p>
+<p class="p">Adjust the contrast pot only after power-on — the usual symptom is a solid block of blocks.</p>
+</div>
+
+<div class="step">
+  <h3>Stage 5 · MOSFET driver stage — build 4 identical</h3>
+<p><span class="m">gate</span>← PCF pin, <span class="m">source</span>→GND, <span class="m">drain</span>→load, 100 kΩ from gate to GND.</p>
+<table>
+<thead><tr><th>PCF</th><th>Load</th><th>Wiring from the 5 V rail</th><th>Extra</th></tr></thead>
+<tbody>
+<tr><td class="m">P1</td><td>green</td><td>5V → anode → cathode → 330 Ω → drain</td><td>—</td></tr>
+<tr><td class="m">P2</td><td>yellow</td><td>5V → anode → cathode → 330 Ω → drain</td><td>—</td></tr>
+<tr><td class="m">P3</td><td>red</td><td>5V → anode → cathode → 330 Ω → drain</td><td>—</td></tr>
+<tr><td class="m">P4</td><td>buzzer</td><td>5V → buzzer <strong>+</strong> ; buzzer <strong>−</strong> → drain</td><td>1N4148: cathode to 5V, anode to drain</td></tr>
+</tbody>
+</table>
+<p class="p">The gate pull-down is what keeps the buzzer silent during boot and if I²C hangs.</p>
+</div>
+
+<div class="step">
+  <h3>Stage 6 · Reed switch on P0</h3>
+<p>One terminal to <span class="m">P0</span>, the other to GND, with 10 kΩ from P0 to 3V3. Closed must read LOW. If the switch is normally-closed, invert <span class="m">REED_CLOSED_LEVEL</span> and re-test.</p>
+</div>
+
+<div class="step">
+  <h3>Stage 7 · MQ-135 into ADS1115 AIN0</h3>
+<p>MQ-135 <span class="m">VCC</span>→5V with 100 nF across it, <span class="m">GND</span>→GND, <span class="m">D0</span> unused. Then <span class="m">A0</span> → 4.7 kΩ → AIN0 node → 2.2 kΩ → GND. AIN1–AIN3 unused.</p>
+<p><strong>Measure A0 before fitting the divider.</strong> Expect 0.3–0.6 V on a 10 kΩ-load board, lower in a hot humid cabinet. Record the value and the board's load resistor below.</p>
+<table>
+<thead><tr><th>Measured A0 (5 V, 5 min)</th><th>Load resistor R<sub>L</sub> on board</th><th>Expected AIN0 = A0 × 0.319</th></tr></thead>
+<tbody><tr><td style="height:7mm"></td><td></td><td></td></tr></tbody>
+</table>
+</div>
+
+<h2>D · First power-on — staged, meter on the rails</h2>
+
+<div class="warn">
+  <h3>Power in stages. Do not connect everything and switch on.</h3>
+</div>
+
+<table>
+<thead><tr><th class="tick"></th><th>Stage</th><th>Measure</th><th>Accept</th><th>Reject if</th></tr></thead>
+<tbody>
+<tr><td class="tick">&#9744;</td><td>1 · MCU only</td><td>3V3 pin to GND</td><td>3.20 – 3.40 V</td><td>Below 3.1 V or above 3.5 V</td></tr>
+<tr><td class="tick">&#9744;</td><td>2 · add I²C modules</td><td>3V3 again, then droop under load</td><td>stays above 3.15 V</td><td>sags toward 3.0 V</td></tr>
+<tr><td class="tick">&#9744;</td><td>3 · add 5 V loads one at a time</td><td>5V at the buzzer, then the LEDs</td><td>holds 4.75 – 5.25 V</td><td>any visible droop — fit more bulk capacitance</td></tr>
+<tr><td class="tick">&#9744;</td><td>4 · final</td><td>both rails, board warm after 10 min</td><td>stable and warm to touch, not hot</td><td>any module too hot to touch</td></tr>
+</tbody>
+</table>
+
+<h2>E · Serial log — expected on first boot</h2>
+<p class="p">These are the strings the compiled firmware emits. <strong>None has yet been observed on hardware</strong> — this is what to compare against, not a record of a successful run.</p>
+<div class="exp">[MQ135] Relative baseline captured: AIN0 0.1xx mV (ADS code nnn)
+[MQ135] Divider 4.7k/2.2k configured as 4700/2200 ohm; scale 0.319; max A0 at 3300 mV AIN0 10350 mV
+[MQ135] No ppm/calibration claim; tune delta using test evidence.
+[ADS1115] OK range=GAIN_ONE full-scale=+/-4.096 V rate=128 SPS
+[Inventory] Loaded n item(s)
+[WiFi] Connected: a.b.c.d
+[Backend] Disabled until BACKEND_URL + BACKEND_INGEST_KEY are set</div>
+
+<div class="ok">
+  <h3>Acceptance criteria for "it works"</h3>
+  <ol style="margin-bottom:0">
+    <li>No <span class="m">Sensor Fault</span> in the reported status — the PCF8574 is answering at 0x20.</li>
+    <li>Temperature and pressure both read live, not zero.</li>
+    <li>Humidity reads live.</li>
+    <li>MQ baseline captured, and the AIN0 value sits in the range recorded in stage 7.</li>
+    <li>All three LEDs change with the status the device reports.</li>
+    <li>Buzzer beeps on an alert, and stays silent when idle.</li>
+    <li>LCD shows the status pages, with the contrast pot adjusted.</li>
+    <li>RFID tag scan registers an inventory item and it survives a power cycle.</li>
+    <li>Door open is detected and cleared correctly.</li>
+    <li><span class="m">[Backend] seq n accepted</span> appears once the service URL and key are set.</li>
+  </ol>
+</div>
+
+<h2>F · Commissioning the backend link</h2>
+<ol>
+  <li>Start the service: <span class="m">cd backend &amp;&amp; npm start</span>. Confirm <span class="m">GET /healthz</span> returns <span class="m">{"status":"ok"}</span>.</li>
+  <li>In the firmware set <span class="m">BACKEND_URL</span> to the origin only — <span class="m">http://192.168.1.50:8080</span>, no trailing slash and no <span class="m">/api</span> suffix.</li>
+  <li>Set <span class="m">BACKEND_INGEST_KEY</span> to the plaintext whose SHA-256 is the service's <span class="m">FG_INGEST_KEY_SHA256</span>. The service stores only the hash.</li>
+  <li>For plain HTTP over the LAN, no TLS fingerprint is needed. If you use an <span class="m">https</span> URL you must also set <span class="m">BACKEND_TLS_FINGERPRINT_ENABLED</span> and supply a real fingerprint, or the firmware refuses to send.</li>
+  <li>Open the dashboard at <span class="m">http://localhost:5173</span>. The device appears within one interval (30 s).</li>
+</ol>
+
+<div class="sig">
+  <p>Built by ______________________ &nbsp; Date ____________ &nbsp; Hardware revision ______</p>
+  <table>
+    <tr><th style="width:34%">A0 in clean air (measured)</th><td></td><th style="width:22%">Load R<sub>L</sub></th><td></td></tr>
+    <tr><th>AIN0 after divider</th><td></td><th>3V3 rail (loaded)</th><td></td></tr>
+    <tr><th>5V rail (all loads on)</th><td></td><th>Buzzer marking verified</th><td>&#9744; yes &#9744; no</td></tr>
+  </table>
+</div>
+
+<footer>
+  Pin assignments, I²C addresses, the PCF channel map and the <span class="m">0xC1</span> configuration value are taken from the compiled <span class="m">FreshGuard.ino</span>, so this sheet and the firmware cannot silently disagree. GPIO numbers are authoritative; the NodeMCU silkscreen column is provisional until confirmed against the actual module.<br>
+  <strong>No step on this sheet has been performed on hardware.</strong> There is no bench record, no measured current draw and no confirmed board layout behind any of it. Treat every "accept" figure as a starting point to measure, not a validated limit.
+</footer>
+
+</div>
+</body>
+</html>

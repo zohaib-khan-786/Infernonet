@@ -1,0 +1,35 @@
+{
+  "name": "freshguard-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "FreshGuard Stage 1 backend: idempotent device snapshot ingest, SQLite projection, read API and SSE for the Option B dashboard.",
+  "engines": {
+    "node": ">=24.12.0 <25"
+  },
+  "typecheck": false,
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "mock": "node src/tools/mock-device.js",
+    "prune": "node src/retention/prune.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "smoke": "node scripts/smoke.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.4.1",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
+    "mqtt": "^5.16.0",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "supertest": "^7.1.4",
+    "vitest": "^3.2.4"
+  }
+}

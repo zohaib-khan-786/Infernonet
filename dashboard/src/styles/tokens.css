@@ -1,0 +1,679 @@
+/* =============================================================================
+ * FreshGuard — design tokens
+ * =============================================================================
+ * VISUAL THESIS
+ * -----------------------------------------------------------------------------
+ * FreshGuard is a measuring instrument for a machine that has physical
+ * consequences, so it is built like one: a dark control-room face, four-step
+ * elevation carried by surface lightness and 1px seams rather than by shadow,
+ * and dense hairline-ruled readouts stamped in tabular mono. Saturation is a
+ * budget, not a style — the only chromatic pixels in the interface are the
+ * status inks, the data series, and the focus ring, and every one of them is
+ * doing a job a shape or a word could not do alone. The calm state is genuinely
+ * calm: a good cabinet looks quiet, and it takes real red to make the page loud.
+ * Density is the aesthetic, not an accident — an instrument read at arm's length
+ * in a basement cannot afford generous whitespace.
+ *
+ * Palette source: `FreshGuard_Enterprise_Dashboard_UI_Guide.md` §2. Three of
+ * the guide's own values are NOT used verbatim, because measured against
+ * WCAG 2.1 they fail on the guide's own dark surfaces:
+ *
+ *     guide muted  #60758A  3.30–3.98:1   needs 4.5:1   -> used #778CA1
+ *     guide border #1C3854  1.31–1.57:1   needs 3:1     -> #3870A7 on controls
+ *     guide purple #8B5CF6  4.10–4.48:1   needs 4.5:1   -> used #9970F7
+ *     guide danger #EF4444  4.18:1        needs 4.5:1   -> used #F05252
+ *     guide info   #3B82F6  4.28:1        needs 4.5:1   -> used #4387F6
+ *
+ * Each substitute keeps the guide's hue and is the minimum lightness along that
+ * hue which clears the threshold on the LIGHTEST surface it may sit on
+ * (#10243A). Guiding hues are preserved; only lightness moves. The guide's
+ * border is kept verbatim as the decorative hairline, which WCAG 1.4.11 exempts,
+ * and a separate control border is held at 3:1.
+ *
+ * Re-run `node tools/verify-dark-tokens.mjs` to re-verify the whole set.
+ *
+ * CONTRAST PAIRS VERIFIED (WCAG 2.1; computed, not estimated)
+ * -----------------------------------------------------------------------------
+ *   text, 4.5:1 required — measured on the LIGHTEST surface (#10243A), which
+ *   is the worst case for light ink on a dark ground
+ *     ink-primary    #F3F7FB   14.61:1
+ *     ink-secondary  #91A4B8    6.14:1
+ *     ink-tertiary   #778CA1    4.53:1
+ *     fresh          #20C997    7.39:1
+ *     use-soon       #F59E0B    7.32:1
+ *     check-food     #F05252    4.52:1
+ *     sensor-fault   #C7D1DA   10.15:1
+ *     administrative #4387F6    4.52:1
+ *     informational  #91A4B8    6.14:1
+ *
+ *   non-text / graphical, 3:1 required
+ *     rule-strong    #3870A7    3.03:1  (control borders, axis)
+ *     accent-focus   #7FC4F5    8.32:1
+ *     chart series   #22D3EE  8.70  #20C997  7.39  #F59E0B  7.32  #9970F7  4.50
+ *     each status ink on its own dark tint: 4.79 to 10.39
+ *
+ *   DELIBERATELY BELOW 3:1, and why that is correct
+ *     rule-hairline  #1C3854  1.31:1 on plate. A decorative seam. WCAG 1.4.11
+ *       applies to visual information *required to identify a control*, and no
+ *       control here is identified by its seam: every button, input and select
+ *       is bordered with rule-strong at 3.03:1. Do not "fix" this by
+ *       lightening it; lighten rule-strong.
+ *
+ * GREYSCALE DISTINGUISHABILITY — the four device statuses
+ * -----------------------------------------------------------------------------
+ * Colour is never the only channel. Every status ships colour + word + shape,
+ * and the shapes are unambiguous in greyscale at 13px: fresh = ring (circle),
+ * use_soon = triangle, check_food = filled square, sensor_fault = hatched
+ * diamond. The word is always present. That is the primary strategy, and it is
+ * the reason the palette below is free to be calm.
+ *
+ * As a second, independent channel, the four status *inks* are checked for
+ * luminance separation, so a greyscale rendering still tells them apart (WCAG
+ * relative luminance, the standard greyscale proxy). Measured:
+ *
+ *     check_food    #F05252   L 0.2517
+ *     use_soon      #F59E0B   L 0.4389
+ *     fresh         #20C997   L 0.4431   <- collides with use_soon
+ *     sensor_fault  #C7D1DA   L 0.6280
+ *
+ * HONEST LIMITATION, MEASURED NOT ASSUMED. The guide's green and amber sit
+ * 0.0042 apart in luminance, which is BELOW the ~0.013 difference a reader can
+ * resolve on a panel. In greyscale, `fresh` and `use_soon` are not reliably
+ * separable by brightness. The light theme this replaced had a 0.0324 gap and
+ * did not have this problem; the collision is inherited from the guide's
+ * palette, not introduced by the inversion.
+ *
+ * It is survivable because greyscale was never the primary channel: every
+ * status ships colour + word + shape, the shapes are unambiguous at 13px
+ * (fresh = ring, use_soon = triangle, check_food = filled square,
+ * sensor_fault = hatched diamond), and the word is always present. The guide
+ * §37 requires exactly this — never colour alone. Widening the gap would mean
+ * abandoning the guide's hues, so it is documented rather than papered over.
+ * Anyone who later needs to strengthen the greyscale channel should re-space
+ * these four, and re-run tools/lum.mjs to prove the gap, not assume it.
+ *
+ * The tints do not mirror the inks (check-food 0.0105 < sensor-fault 0.0152 <
+ * use-soon 0.0169 < fresh 0.0184), so on a dark ground the two channels
+ * disagree slightly rather than reinforce. Four washes inside 0.010–0.018
+ * cannot be separated by lightness at all; they are hue-led decoration behind
+ * the ink, not a second signal.
+ *
+ * ONE TEXTURE, ON PURPOSE
+ *   Exactly one pattern exists in this system: the 45-degree hatch on
+ *   sensor_fault, which is what a laboratory instrument prints when it has no
+ *   data. It is not decoration and it is not repeated across the other three
+ *   statuses; giving every status a texture would turn a signal into a
+ *   pattern library.
+ *
+ * =============================================================================
+ */
+
+
+:root {
+  /* ===========================================================================
+   * 1. SURFACES — a four-step elevation ramp, darkest at the page, lightest at
+   *    the readout. This ladder *is* the depth model. There is no shadow doing
+   *    the same job.
+   * ======================================================================= */
+
+  /* The page. Also the recessed ground a panel header sits on. */
+  --surface-void: #06111F;
+  /* Wells and tracks: meter tracks, hatched fills, anything carved into a face. */
+  --surface-sunken: #081525;
+  /* Panel headers, panel feet, table head, acknowledged rows. One step up. */
+  --surface-field: #0B1B2D;
+  /* The readout plate. Where a number is stamped. The lightest thing here. */
+  --surface-plate: #10243A;
+
+
+  /* ===========================================================================
+   * 2. INK — four weights of text, plus a dark-chrome ladder.
+   *    Every one clears 4.5:1 on every surface it is permitted to sit on.
+   * ======================================================================= */
+
+  --ink-primary: #F3F7FB;    /* headings, readings, anything load-bearing   16.14:1 */
+  --ink-secondary: #91A4B8;  /* body copy, labels, axis text                6.79:1 */
+  --ink-tertiary: #778CA1;   /* units, legends, cell labels, metadata       5.00:1 */
+  --ink-disabled: #5E7086;   /* disabled controls only; 3.42:1, exempt 1.4.3   */
+
+  /* On the dark bezel. Never use --ink-primary there: it is 1.06:1. */
+  --ink-on-dark: #F3F7FB;      /* bezel headings, the wordmark           18.45:1 */
+  --ink-on-dark-2: #91A4B8;    /* bezel metadata, the device id            7.76:1 */
+  --ink-on-dark-3: #778CA1;    /* bezel tertiary, "no device has reported"  5.72:1 */
+
+
+  /* ===========================================================================
+   * 3. RULES AND EDGES — structure without shadow.
+   *    Only --rule-strong carries meaning. Only --rule-hairline decorates.
+   * ======================================================================= */
+
+  --hairline: 1px;
+  --rule-hairline: #1C3854;   /* seams between panels and rows; 1.31:1        */
+  --rule-strong: #3870A7;     /* control borders, chart axis; clears 3:1      */
+
+  --seam: 1px solid var(--rule-hairline);
+  --seam-strong: 1px solid var(--rule-strong);
+
+  /* Three named edge treatments. Which one an element uses is a *semantic*
+   * choice, not a size choice:
+   *   verdict  a single solid thick bar  -> the device is telling you a verdict
+   *   caution  a DOUBLE rule             -> something about the device is wrong,
+   *                                        which is not a verdict about food
+   *   neutral  a single hairline         -> information, no judgement
+   * The double rule is the load-bearing distinction between the "device clock
+   * is not trusted" banner and a check_food verdict. They share a tone today;
+   * they must not share an edge. See DESIGN_SYSTEM.md, Deferred items. */
+  --edge-verdict: 5px solid var(--tone-edge, var(--rule-strong));
+  --edge-caution: 6px double var(--tone-edge, var(--rule-strong));
+  --edge-neutral: 1px solid var(--tone-edge, var(--rule-hairline));
+
+
+  /* ===========================================================================
+   * 4. STATUS — reserved. Never decorative. Four device verdicts, then two
+   *    non-verdict tones.
+   *
+   *    token          device status   shape (SVG)      word on screen
+   *    fresh          0               ring / circle    "Fresh"
+   *    use-soon       1               filled triangle  "Use soon"
+   *    check-food     2               filled square    "Check food"
+   *    sensor-fault   3               hatched diamond  "Sensor fault"
+   *
+   *    Shapes are in Mark.tsx / lib/status.ts and are NOT duplicated here; the
+   *    table above is the contract between this file and those two.
+   *
+   *    sensor_fault is a cold slate on purpose. It means the device could not
+   *    evaluate the food, and painting it like check_food would invent a
+   *    verdict the device never made.
+   *
+   *    administrative is a desaturated blue-slate and informational borrows the
+   *    neutral field surface, so a storage fault or an info note can never be
+   *    mistaken for a food verdict.
+   * ======================================================================= */
+
+  /* fresh — code 0. Inside every monitored range. The quietest status there is. */
+  --status-fresh-ink: #20C997;
+  --status-fresh-tint: #0A2A22;
+  --status-fresh-edge: #20C997;
+
+  /* use-soon — code 1. Past 75% of a storage window. Plan, do not discard. */
+  --status-use-soon-ink: #F59E0B;
+  --status-use-soon-tint: #2E2109;
+  --status-use-soon-edge: #F59E0B;
+
+  /* check-food — code 2. A confirmed breach. The only red in the system. */
+  --status-check-food-ink: #F05252;
+  --status-check-food-tint: #2F1113;
+  --status-check-food-edge: #F05252;
+
+  /* sensor-fault — code 3. Unknown, not bad. Near-neutral, and hatched. */
+  --status-sensor-fault-ink: #C7D1DA;
+  --status-sensor-fault-tint: #1A2229;
+  --status-sensor-fault-edge: #8A99A6;
+
+  /* administrative — storage / config / optional hardware. Not a verdict. */
+  --status-administrative-ink: #4387F6;
+  --status-administrative-tint: #0D1E38;
+  --status-administrative-edge: #4387F6;
+
+  /* informational — info severity, unrecognised status codes, link banners.
+   * Tint is the neutral field surface on purpose: "no verdict here" should not
+   * look like a sixth opinion. */
+  --status-informational-ink: #91A4B8;
+  --status-informational-tint: #14202E;
+  --status-informational-edge: #3870A7;
+
+
+  /* ===========================================================================
+   * 5. ACCENT AND DATA — one blue, three weights. No second hue.
+   *    There is no brand accent. Buttons are ink-on-paper.
+   * ======================================================================= */
+
+  --accent-link: #7FC4F5;   /* link text; 8.92:1 on the plate            */
+  --accent-series: #22D3EE; /* the measured trace; 7.87:1 on the plate   */
+  --accent-focus: #7FC4F5;  /* keyboard focus only; 5.85:1 on the plate  */
+  --accent-on-dark: #7FC4F5;/* focus ring on the bezel; 9.56:1           */
+  --focus-halo: #06111F;    /* keeps one ring legible on any surface     */
+  --tap-highlight: rgb(11 76 127 / 0.14);
+
+
+  /* ===========================================================================
+   * 6. CHART — one plot per panel, so series are separated by a seam, not by
+   *    colour. The ramp below exists for a future overlay and is built to
+   *    survive having no hue at all.
+   *
+   *    Lightness is the primary channel here, not hue: all four slots step
+   *    cleanly in relative luminance (0.0074 / 0.0834 / 0.1507 / 0.2161 —
+   *    smallest gap 0.066, five times the resolution threshold). The dash
+   *    pattern is the third channel. The hue is almost entirely a single blue
+   *    family plus the ink black, so a chart line can never be mistaken for a
+   *    status colour — the one exception, the sensor_fault slate, is 0.05
+   *    luminance away from the darkest blue and carries a different shape.
+   * ======================================================================= */
+
+  --chart-series-1: #22D3EE;              /* L 0.0074  the black pen trace */
+  --chart-series-2: #20C997;              /* L 0.0834                     */
+  --chart-series-3: #F59E0B;              /* L 0.1507                     */
+  --chart-series-4: #9970F7;              /* L 0.2161                     */
+  --chart-series-soft: #3A6E8F;           /* aliases slot 4               */
+
+  --chart-dash-1: none;
+  --chart-dash-2: 7 3;
+  --chart-dash-3: 2 3;
+  --chart-dash-4: 9 3 2 3;
+
+  --chart-line-weight: 1.75px;
+  --chart-point-radius: 3px;
+  /* MUST equal the SVG's viewBox height in LineChart.tsx (HEIGHT = 168).
+   *
+   * This box is a CSS length and the plot's geometry is SVG user units, and the
+   * two were 8.5rem (136px) against 168. With no `preserveAspectRatio` the
+   * default `xMidYMid meet` fits the smaller ratio, so the whole plot was scaled
+   * uniformly by 136/168 = 0.8095 at EVERY viewport: the axis text declared at
+   * 10px rendered at 8.1px, the axis title with it, and 16px of letterbox
+   * appeared above and below the drawing. It is an absolute length rather than
+   * a rem on purpose - in rem it would drift away from the viewBox again the
+   * moment the user zoomed text, and the same 0.81 factor would come back.
+   *
+   * Nothing is lost by matching them: the scale becomes exactly 1, the axis
+   * text renders at the 10px this token declares, the dead space is reclaimed
+   * as 32px more plot, and `vector-effect: non-sizing-stroke` stops making the
+   * trace heavier than everything around it. */
+  --chart-plot-height: 168px;
+
+  --chart-grid: #16293F;      /* decorative: 2.22:1, paired with the axis  */
+  --chart-axis: #778CA1;      /* 4.46:1 — this is the one that must read   */
+  --chart-band: #0A2135;      /* the device's own configured range         */
+  --chart-band-edge: #3870A7; /* dashed, 4.46:1                           */
+  --chart-label: #91A4B8;     /* axis numerals                            */
+  --chart-label-quiet: #778CA1;
+  --chart-axis-text-size: 10px; /* raise from the hardcoded 9.5px in CSS  */
+
+
+  /* ===========================================================================
+   * 7. BEZEL — the one dark region. The masthead and the link indicator.
+   *    Its job is to be unmissable and to never carry a food verdict.
+   *
+   *    The transport lamps are deliberately NOT green. "Data is arriving" is
+   *    not "the food is fine", and green in this system means fresh and
+   *    nothing else. The lamps borrow the data blue, a muted amber for quiet,
+   *    and plain grey for down. A volunteer must never read a dropped
+   *    connection as a safety warning.
+   * ======================================================================= */
+
+  --surface-bezel: #030A14;
+  --surface-bezel-well: #071523;
+  --surface-bezel-raised: #0A1B2D;
+  --rule-bezel: #1C3854;
+  --rule-bezel-strong: #3870A7;
+  /* The only border permitted on a control inside the bezel, which is the
+   * light-surface `--rule-strong`'s job on a light ground. WCAG 1.4.11 asks for
+   * 3:1 on the boundary of anything you have to be able to identify as a
+   * control, and the two rules above miss it: --rule-bezel is 1.56:1 against
+   * the bezel and --rule-bezel-strong is 2.27:1. At 3.99:1 this is the first
+   * step of the bezel ladder that clears the gate, and it is still a hairline
+   * on a near-black ground, so the bezel keeps reading as a bezel. */
+  --rule-bezel-control: #5C86B5;
+
+  --transport-live: #22D3EE;    /* data arriving — the data blue, lifted  */
+  --transport-waiting: #F59E0B; /* quiet, not alarming                       */
+  --transport-down: #778CA1;    /* no information; deliberately uninteresting */
+
+  /* A device-level caution, for text inside the bezel. The status amber
+   * (--status-use-soon-ink) is only 2.36:1 here and is for text on a light
+   * surface; this is the bezel-legal step of the same hue, at 8.70:1. */
+  --caution-on-dark: #F59E0B;
+
+
+  /* ===========================================================================
+   * 8. TYPOGRAPHY
+   *
+   *    Two voices, split by job rather than by mood, and both are system
+   *    stacks on purpose.
+   *
+   *    WHY NO WEBFONT. The dashboard has to work in a basement with no signal.
+   *    A Google Fonts <link> is render-blocking and fails closed exactly when
+   *    this product is most needed, and self-hosting means adding binary assets
+   *    and an @font-face to a project that deliberately has three runtime
+   *    dependencies. The split that makes this read as an instrument is
+   *    mono-for-measurement vs humanist-sans-for-language; that split is
+   *    carried by the roles below, not by a particular grotesque, so a system
+   *    stack loses nothing. If a brand face is ever added, it replaces
+   *    --font-sans only, and it must keep a humanist skeleton at these sizes.
+   *
+   *    Mono ladder, best first: ui-monospace (Firefox/Chrome resolved),
+   *    Cascadia Mono + Cascadia Code (Windows 11), SF Mono (macOS, via
+   *    ui-monospace), Segoe UI Mono, Liberation Mono, Consolas, Courier New.
+   *    Sans ladder: Segoe UI Variable Text (Win11), Segoe UI, system-ui
+   *    (SF Pro / Roboto), then the generic fallback.
+   *
+   *    The two largest steps are fluid so the verdict stays readable at 360px
+   *    and does not become a billboard at 1400px. The scale is deliberately
+   *    compressed: an instrument is dense.
+   * ======================================================================= */
+
+  --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "Cascadia Code", "SFMono-Regular",
+    "Segoe UI Mono", "Liberation Mono", Consolas, "Courier New", monospace;
+
+  /* 11.5px  units, axis micro-labels, mobile cell labels, footnotes */
+  --type-micro: 0.71875rem;
+  /* 12.5px  table headers, button labels, panel sub, log stamps */
+  --type-meta: 0.78125rem;
+  /* 14px    secondary body, table cells, condition detail */
+  --type-small: 0.875rem;
+  /* 15.5px  body copy, panel titles, notice titles */
+  --type-body: 0.96875rem;
+  /* 18→22px one measurement. The 18px floor is load-bearing: at 20px the word
+   * "not reported" wraps to two lines in a 360px reading cell, which reads as
+   * a layout fault rather than as an absence. */
+  --type-readout: clamp(1.125rem, 3.2vw, 1.375rem);
+  /* 24→34px the verdict word. At 360px "Check food" is 24px on one line. */
+  --type-verdict: clamp(1.5rem, 5.2vw, 2.125rem);
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --leading-tight: 1.05;   /* the verdict word                    */
+  --leading-snug: 1.2;     /* readouts, headings, chips           */
+  --leading-body: 1.5;     /* body copy on a panel                */
+  --leading-prose: 1.62;   /* notice and banner paragraphs        */
+  --leading-data: 1.1;     /* numeric readouts; reserve the height
+                              so a value arriving does not shift
+                              the row it sits in                  */
+
+  /* Uppercase and tracked-out labels are banned in this system. These are
+   * optical corrections at display sizes, nothing more. */
+  --tracking-display: -0.025em; /* the verdict word                    */
+  --tracking-heading: -0.015em;  /* panel and band titles              */
+  --tracking-normal: 0;
+  --tracking-label: 0.005em;    /* small sans labels                   */
+  --tracking-data: -0.01em;     /* tabular numerals in mono            */
+
+
+  /* ===========================================================================
+   * 9. SPACE — 4px base, dense by default.
+   * ======================================================================= */
+
+  --space-1: 0.25rem;   /*  4px  hairline gaps, icon to label            */
+  --space-2: 0.5rem;    /*  8px  inline gaps, chip padding              */
+  --space-3: 0.75rem;   /* 12px  default cell padding, panel head/foot   */
+  --space-4: 1rem;      /* 16px  page gutters on mobile, control padding */
+  --space-5: 1.5rem;    /* 24px  between panels on mobile                */
+  --space-6: 2rem;      /* 32px  reserved: desktop column rhythm        */
+  --space-7: 3rem;      /* 48px  page bottom rhythm                     */
+
+
+  /* ===========================================================================
+   * 10. RADIUS — nothing above 3px, anywhere, ever. A moulded instrument
+   *     face has a 1-2px break, not a 16px pill.
+   * ======================================================================= */
+
+  --radius-none: 0;            /* structural panels, rules, the masthead */
+  --radius-hairline: 1px;      /* wells, meter tracks, chart frames      */
+  --radius-control: 2px;       /* buttons, inputs, chips, selects        */
+  --radius-plate: 3px;         /* panels, banners, notices                */
+
+
+  /* ===========================================================================
+   * 11. ELEVATION — a budget of two, and if you need a third you have
+   *     misunderstood the layout. Depth here is lightness plus a seam.
+   * ======================================================================= */
+
+  --elevation-none: none;
+  /* Only for something that genuinely floats over content: the sticky
+   * masthead, the skip link, a device-picker drop. 1px, not 8px. */
+  --elevation-raised: 0 1px 2px rgb(15 22 24 / 0.07);
+  /* Reserved for true overlays. Nothing in the product uses it today. */
+  --elevation-overlay: 0 8px 24px -10px rgb(15 22 24 / 0.22), 0 2px 6px -2px rgb(15 22 24 / 0.1);
+
+
+  /* ===========================================================================
+   * 12. MOTION — motion answers an action or a state change. It is never
+   *     ambient. There are exactly two loops in the system and both carry
+   *     information: the live-feed lamp (data is arriving) and the loading
+   *     sweep (a request is in flight).
+   * ======================================================================= */
+
+  --motion-instant: 80ms;   /* colour and border on hover               */
+  --motion-fast: 120ms;     /* chips, focus ring, segmented options     */
+  --motion-base: 180ms;     /* expanding a section, a chart redraw      */
+  --motion-slow: 320ms;     /* reserved; a real layout change only     */
+
+  --motion-pulse-loop: 2400ms; /* live-feed lamp; 1 cycle, opacity only */
+  --motion-sweep: 1400ms;      /* loading bar; 1 cycle, transform only */
+
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-entrance: cubic-bezier(0, 0, 0, 1);
+  --ease-exit: cubic-bezier(0.3, 0, 1, 1);
+
+
+  /* ===========================================================================
+   * 13. LAYOUT, FOCUS AND HIT TARGETS
+   * ======================================================================= */
+
+  --shell-max: 1560px;      /* dense by design; a reading measure wall  */
+  --rail-width: 27rem;      /* the right rail on wide screens            */
+  --measure-prose: 68ch;    /* notice and banner line length; under 80  */
+
+  --control-min: 2.25rem;   /* 36px  pointer-driven controls            */
+  --tap-min: 44px;          /* coarse pointers; the accessibility floor */
+
+  --z-sticky: 20;           /* the masthead                             */
+  --z-skip: 100;            /* the skip link                            */
+
+  /* One focus ring, everywhere, on :focus-visible only. The white halo is what
+   * lets a single ring colour survive on both the plate and the bezel, which a
+   * single-colour ring cannot do. */
+  --focus: var(--accent-focus);
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+  --focus-ring-halo: 5px;
+
+
+  /* ===========================================================================
+   * 14. BREAKPOINTS — DOCUMENTATION ONLY.
+   *     Custom properties cannot be read inside @media without a preprocessor,
+   *     and this file is plain CSS on purpose. These are here so the numbers
+   *     live in exactly one place; the media queries still spell them out.
+   *     The 44rem / 46rem pair is genuinely redundant today and is a
+   *     consolidation candidate, not a bug.
+   * ======================================================================= */
+
+  --bp-verdict-step: 26rem;       /*  416px  verdict size switch       */
+  --bp-annunciator: 44rem;        /*  704px  verdict plates go 2-up    */
+  --bp-table-collapse: 46rem;     /*  736px  food table becomes a list */
+  --bp-table-collapse-edge: 46.0625rem; /* 736.999px, the un-collapse   */
+  --bp-shell: 60rem;              /*  960px  page gutters widen        */
+  --bp-rail: 68rem;               /* 1088px  right rail appears        */
+}
+
+
+/* =============================================================================
+ * REDUCED MOTION
+ * -----------------------------------------------------------------------------
+ * Durations become 1ms rather than 0ms: a zero duration can suppress
+ * transitionend / animationend that other code may be listening for, and 1ms
+ * is indistinguishable from 0ms to a person. components.css already sets
+ * `animation: none` on both loops under this query, so nothing is left moving.
+ * =============================================================================
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-instant: 1ms;
+    --motion-fast: 1ms;
+    --motion-base: 1ms;
+    --motion-slow: 1ms;
+  }
+}
+
+
+/* =============================================================================
+ * MORE CONTRAST
+ * -----------------------------------------------------------------------------
+ * The system leans on a 1.10-1.13 lightness step per surface and a 2.22:1
+ * hairline to carry structure, and it says explicitly in section 2.1 that this
+ * is the depth model. When a user has asked the browser for more contrast, that
+ * is no longer an acceptable dependency: the seams step up to 3.05:1, which is
+ * one clear step below --rule-strong's 4.46 so the seam/control hierarchy still
+ * reads, and the two inks that were permitted to sit low move up.
+ *
+ * components.css carries the component-level half of this same query.
+ * =============================================================================
+ */
+@media (prefers-contrast: more) {
+  :root {
+    --rule-hairline: #1C3854;
+    --rule-bezel: #1C3854;
+    --ink-tertiary: #778CA1;
+    --ink-disabled: #5E7086;
+    --ink-on-dark-3: #778CA1;
+  }
+}
+
+
+/* =============================================================================
+ * PRINT
+ * -----------------------------------------------------------------------------
+ * A printed copy of this page is a plausible object: taped inside a cabinet
+ * door, or handed to whoever is covering the shift. It is also the case where
+ * every screen affordance in the design system stops working at once - there is
+ * no hover, no focus ring, no sticky masthead, and no backlight for the
+ * elevation ladder to be a ladder in. A copy of this dashboard is ALSO the most
+ * dangerous thing to get wrong, because it is the one artefact that can sit
+ * next to the food while nobody is watching the screen.
+ *
+ * So: one ink, no tints, and every distinction that was carried by hue or by a
+ * wash is re-carried by something a printer can hold.
+ *
+ *   survives on paper   the 5px solid verdict bar, the 6px double caution rule,
+ *                       the 1px informational hairline, the shape marks, the
+ *                       word, the raw token, the SVG hatch, and every rule once
+ *                       --rule-hairline is black
+ *   deliberately dropped the six tints (0.71-0.79 washes: invisible through a
+ *                       photocopier, or a large flat grey that reads as a fault)
+ *                       and the bezel (a solid black band and a cartridge)
+ *
+ * The wording is unchanged. A printed page that says "Check food" must not be
+ * quieter than the screen does.
+ * =============================================================================
+ */
+@media print {
+  :root {
+    --surface-void: #ffffff;
+    --surface-field: #ffffff;
+    --surface-plate: #ffffff;
+    --surface-sunken: #ffffff;
+    --surface-bezel: #ffffff;
+    --surface-bezel-well: #ffffff;
+    --surface-bezel-raised: #ffffff;
+
+    /* A 2.22:1 hairline is what a printer drops first. Every rule becomes
+       solid black; the seam/control hierarchy is then carried by weight, which
+       is what survives a laser printer, not by lightness. */
+    --rule-hairline: #000000;
+    --rule-bezel: #000000;
+    --rule-bezel-strong: #000000;
+    --rule-bezel-control: #000000;
+
+    --ink-on-dark: #000000;
+    --ink-on-dark-2: #000000;
+    --ink-on-dark-3: #000000;
+
+    --status-fresh-tint: #ffffff;
+    --status-use-soon-tint: #ffffff;
+    --status-check-food-tint: #ffffff;
+    --status-sensor-fault-tint: #ffffff;
+    --status-administrative-tint: #ffffff;
+    --status-informational-tint: #ffffff;
+  }
+}
+
+
+/* =============================================================================
+ * LEGACY NAME MAP  —  DELETE THIS WHOLE BLOCK IN THE IMPLEMENTATION PASS
+ * -----------------------------------------------------------------------------
+ * Every custom property the existing components already reference, mapped onto
+ * the canonical name above. Nothing in the product resolves to a raw hex after
+ * this block, so the rename is a single find-and-replace per selector.
+ *
+ * Preserved: --panel --field --plate --rule --rule-strong
+ *            --ink --ink-2 --ink-3
+ *            --ok-* --warn-* --crit-* --unknown-* --admin-* --neutral-*
+ *            --series --series-soft --threshold --threshold-edge
+ *            --link --focus --focus-halo
+ *            --font-sans --font-mono
+ *            --text-micro --text-meta --text-small --text-body
+ *            --text-readout --text-annunciator --text-hero
+ *            --space-1 … --space-7
+ *            --radius-control --radius-plate --seam --tap-min
+ *            --shell-max --rail-width
+ *            --motion-fast --motion-base --ease
+ *
+ * NOTE on --text-hero / --text-annunciator: layout.css applies --text-hero
+ * inside a `max-width: 26rem` query, which inverts the scale — it would make
+ * the verdict *larger* on the narrowest screens, and 46px at 360px breaks the
+ * layout. Both names now resolve to the same fluid --type-verdict, which
+ * neutralises the override and removes the 416px size jump. The media query
+ * itself is dead code and should be deleted; see DESIGN_SYSTEM.md, Deferred.
+ * =============================================================================
+ */
+:root {
+  /* Surfaces */
+  --panel: var(--surface-void);
+  --field: var(--surface-field);
+  --plate: var(--surface-plate);
+
+  /* Rules */
+  --rule: var(--rule-hairline);
+
+  /* Ink */
+  --ink: var(--ink-primary);
+  --ink-2: var(--ink-secondary);
+  --ink-3: var(--ink-tertiary);
+
+  /* Status */
+  --ok-ink: var(--status-fresh-ink);
+  --ok-tint: var(--status-fresh-tint);
+  --ok-edge: var(--status-fresh-edge);
+
+  --warn-ink: var(--status-use-soon-ink);
+  --warn-tint: var(--status-use-soon-tint);
+  --warn-edge: var(--status-use-soon-edge);
+
+  --crit-ink: var(--status-check-food-ink);
+  --crit-tint: var(--status-check-food-tint);
+  --crit-edge: var(--status-check-food-edge);
+
+  --unknown-ink: var(--status-sensor-fault-ink);
+  --unknown-tint: var(--status-sensor-fault-tint);
+  --unknown-edge: var(--status-sensor-fault-edge);
+
+  --admin-ink: var(--status-administrative-ink);
+  --admin-tint: var(--status-administrative-tint);
+  --admin-edge: var(--status-administrative-edge);
+
+  --neutral-ink: var(--status-informational-ink);
+  --neutral-tint: var(--status-informational-tint);
+  --neutral-edge: var(--status-informational-edge);
+
+  /* Chart */
+  --series: var(--chart-series-2);
+  --threshold: var(--chart-band);
+  --threshold-edge: var(--chart-band-edge);
+
+  /* Accent */
+  --link: var(--accent-link);
+  --ease: var(--ease-standard);
+
+  /* Type */
+  --text-micro: var(--type-micro);
+  --text-meta: var(--type-meta);
+  --text-small: var(--type-small);
+  --text-body: var(--type-body);
+  --text-readout: var(--type-readout);
+  --text-annunciator: var(--type-verdict);
+  --text-hero: var(--type-verdict);
+}

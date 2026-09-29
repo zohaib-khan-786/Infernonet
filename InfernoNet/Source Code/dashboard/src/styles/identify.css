@@ -1,0 +1,486 @@
+/* =============================================================================
+ * Identification — the camera, the manual box, and the four answers.
+ * -----------------------------------------------------------------------------
+ * ADDITIVE ONLY, the same contract as pages.css and freshness.css: new class
+ * names, no edits to tokens.css or shell.css, and no raw hex anywhere. Every
+ * value below is a token.
+ *
+ * WHERE THE EXISTING VOCABULARY IS REUSED RATHER THAN INVENTED
+ * -----------------------------------------------------------------------------
+ *   .panel, .panel__head/__title/__sub/__body/__foot        (IdentifyPanel)
+ *   .btn, .btn--primary, .btn--quiet                          (all three paths)
+ *   .chip, .chip--plain                                       (provenance, tokens)
+ *   .notice, .notice__body, .notice__actions, .notice__meta   (every outcome)
+ *   .notice[data-kind='service'], .mark--sm, .mark--lg        (failures)
+ *   .facts, .fact, .fact__label, .fact__value                (the found item)
+ *   .field, .field__label, .field__input, .field__hint       (the manual box)
+ *   .note, .hint, .num, .loading-line, .visually-hidden, [data-tone]
+ *
+ * ===========================================================================
+ * THE ONE RULE THE COLOURS IN HERE EXIST TO ENFORCE
+ * ===========================================================================
+ *
+ * A lookup RESULT is not a food VERDICT, and the two must never be painted the
+ * same. This is the specific failure the project has already been bitten by once:
+ * `components.css` had to strip tones off service errors because a failed
+ * request was wearing `crit` and a filled square — which on this instrument is
+ * the check_food annunciator, byte for byte, on a page whose only red means
+ * "throw this food out".
+ *
+ * So the four outcomes are coloured by what they are, and none of them borrows a
+ * verdict colour for being bad news:
+ *
+ *   found        neutral + circle.  It is the good outcome and it still gets no
+ *                                status colour, because "the service found the
+ *                                item you asked for" is not a statement about
+ *                                food. The item's real verdict arrives inside
+ *                                the block carrying its own tone and its own
+ *                                shape, from the engine's own word.
+ *   unknown      neutral + slashed-circle. "Not registered" is an absence, and
+ *                                the slashed circle is the instrument's existing
+ *                                glyph for "there is nothing here", not a
+ *                                judgement. `unknown` (the cold sensor-fault
+ *                                slate) would have implied the DEVICE could not
+ *                                tell, which is a different and wrong claim: the
+ *                                service told us, definitively, that it knows.
+ *   retired      admin + diamond. An id out of service is an administrative
+ *                                state. Not `crit` (nobody has to throw food
+ *                                out) and not `unknown` (somebody can tell, and
+ *                                did).
+ *   malformed    admin + diamond. A refusal of the input rather than a fact about
+ *                                any food — the same family as the service
+ *                                errors, which is why the camera's own failures
+ *                                use `data-kind="service"` outright.
+ *
+ * A sixth state, the camera being unavailable, is `data-kind="service"` with a
+ * plain diamond and the 6px double rule: the instrument-caution family that
+ * already means "about this page's plumbing, not about the food". It is never
+ * `crit`, and a scanner that cannot start must never look like a food warning.
+ *
+ * ===========================================================================
+ * THE CAMERA VIEWPORT
+ * ===========================================================================
+ *
+ * Two things are non-negotiable about the frame that shows the live preview:
+ *
+ *   1. It is a fixed 4:3 box with the image COVERED, so a tall phone frame and a
+ *      wide laptop frame both fill it without letterboxing the one thing the
+ *      operator is trying to aim. `object-fit: cover` crops rather than
+ *      letterboxes, because wasted pixels around a QR code is wasted accuracy.
+ *   2. It is never mirrored. The canvas is drawn from the untransformed video
+ *      element, so a mirror here would be cosmetic — and a mirrored QR code does
+ *      not decode, which is exactly the kind of thing that looks like a
+ *      decoration and breaks a mandatory feature. See the note in QrScanner.tsx.
+ * =========================================================================== */
+
+/* --- The two input sources -------------------------------------------------- */
+
+/* The camera and the manual box are peers. They are not separated by a heading
+   that says "primary" and "fallback", because on this project's LAN address the
+   camera is the one that cannot run and the manual box is the one that must not
+   look like a consolation. */
+.identify__camera,
+.identify__manual {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4) 0;
+}
+
+.identify__camera {
+  border-bottom: var(--seam) solid var(--rule);
+}
+
+.identify__manual {
+  align-items: flex-start;
+}
+
+.identify__manual .field {
+  width: 100%;
+}
+
+/* The submit and Clear sit together under the field rather than beside the
+   label, so the reading order is "what it is, where to put it, what to press" —
+   which is the order a form has to be usable in. */
+.identify__manual-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* --- The camera viewport --------------------------------------------------- */
+
+.scanner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-3) 0;
+}
+
+.scanner__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.scanner__title {
+  margin: 0;
+  font-size: var(--type-small);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-primary);
+  letter-spacing: var(--tracking-label);
+}
+
+.scanner__viewport {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--surface-void);
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--radius-plate);
+}
+
+.scanner__video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* Cover, not contain: the operator is aiming a label at a reticle, and every
+     pixel of letterbox is a pixel of accuracy thrown away. */
+  object-fit: cover;
+  /* Explicitly not mirrored. A mirrored preview feels natural and a mirrored
+     QR code does not decode; the decoder reads the untransformed frame, so the
+     preview is left alone rather than being made to look right. */
+  transform: none;
+}
+
+/* The reticle: four corner brackets, in the instrument's own vocabulary of
+   marks, so "framed" is a shape rather than a sentence. Decorative, so it is
+   hidden from assistive technology — the live status below the frame says what
+   the camera is doing. */
+.scanner__reticle {
+  position: absolute;
+  inset: 12%;
+  pointer-events: none;
+  border: 2px solid var(--rule-strong);
+  /* Only the corners: a full box would sit over the label being read. */
+  clip-path: polygon(
+    0 0,
+    18% 0,
+    18% 3%,
+    3% 3%,
+    3% 18%,
+    0 18%,
+    0 0,
+    100% 0,
+    100% 18%,
+    97% 18%,
+    97% 3%,
+    82% 3%,
+    82% 0,
+    100% 0,
+    100% 100%,
+    82% 100%,
+    82% 97%,
+    97% 97%,
+    97% 82%,
+    100% 82%,
+    100% 100%,
+    0 100%,
+    0 82%,
+    3% 82%,
+    3% 97%,
+    18% 97%,
+    18% 100%,
+    0 100%
+  );
+  opacity: 1;
+}
+
+/* The reticle waits, and is hollow, until frames are actually arriving. A
+   confident-looking target over a camera that has not started reads as a
+   working scanner. */
+.scanner__reticle[data-phase='starting'],
+.scanner__reticle[data-phase='blocked'] {
+  opacity: 1;
+  border-style: dashed;
+}
+
+.scanner__hint {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--type-micro);
+  line-height: 1.4;
+  color: var(--ink-on-dark-2);
+  /* A scrim, so the privacy sentence stays readable over any frame — a bright
+     white wall behind the camera must not erase the one line that says frames
+     are not being sent anywhere. */
+  background: var(--surface-void);
+  border-top: var(--hairline) solid var(--rule);
+}
+
+/* --- The outcome ----------------------------------------------------------- */
+
+.identify__outcome {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+  padding: var(--space-4);
+  background: var(--surface-field);
+  border: var(--hairline) solid var(--rule);
+  border-left: 4px solid var(--tone-edge, var(--rule-strong));
+  border-radius: var(--radius-plate);
+}
+
+/* A service failure is a refusal of the request, not a fact about the label, so
+   it wears the double rule the instrument already reserves for "about the
+   plumbing" — the same treatment the banners and `ErrorNotice` use, and the one
+   that must never be mistaken for check_food. */
+.identify__outcome[data-kind='service'] {
+  border-left: 6px double var(--rule-bezel-strong);
+}
+
+.identify__outcome-kind {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--type-meta);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--tone-ink, var(--ink-secondary));
+}
+
+.identify__outcome-title {
+  margin: 0;
+  font-size: var(--type-verdict);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  color: var(--ink-primary);
+  /* Tabular figures would be wrong for a food name; this is a title, not a
+     readout, so it wraps and reflows like prose. */
+  overflow-wrap: anywhere;
+}
+
+/* Provenance, under the title and above the details: what was sent, where it
+   came from, and — for a camera read — the raw label text. A result nobody can
+   trace back to an input is a result nobody can check, and the raw text has to be
+   visible for the claim "only the id was taken from it" to be verifiable rather
+   than merely asserted. */
+.identify__outcome-origin {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin: 0;
+}
+
+.identify__origin-text {
+  font-size: var(--type-meta);
+  color: var(--ink-tertiary);
+}
+
+.identify__label-echo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+  font-size: var(--type-meta);
+  color: var(--ink-tertiary);
+}
+
+.identify__label-echo .num {
+  /* A whole URL or JSON blob is not a number, and must not be allowed to set
+     the width of the row it sits in. */
+  font-size: var(--type-micro);
+  overflow-wrap: anywhere;
+}
+
+/* --- The found item -------------------------------------------------------- */
+
+/* `.facts` is the existing grid, so the identified item is laid out exactly as
+   it is in the drawer. The identification surface has no grid of its own, which
+   is the point: the same facts in two places must not have two layouts. */
+.identify__found {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.identify__verdicts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--surface-void);
+  border-radius: var(--radius-plate);
+}
+
+.identify__verdict {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.identify__verdict-label {
+  font-size: var(--type-meta);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-tertiary);
+}
+
+.identify__verdict .withheld__note {
+  /* The whole reason the device's own status is shown beside the service's:
+     this sentence is the difference between a verdict and a guess, and it has to
+     be readable, not a tooltip. */
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.identify__verdict-reason {
+  margin: 0;
+  font-size: var(--type-meta);
+  line-height: var(--leading-prose);
+  color: var(--ink-secondary);
+}
+
+/* --- The optional reader --------------------------------------------------- */
+
+.identify__reader {
+  padding: var(--space-3) 0 0;
+  border-top: var(--seam) solid var(--rule);
+}
+
+.identify__reader-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-1);
+  font-size: var(--type-meta);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+/* --- Forced colours -------------------------------------------------------- */
+
+@media (forced-colors: active) {
+  /* The outcome's left rule is the only thing carrying the tone, and forced
+     colours flattens backgrounds. A shape and the text beside it are what
+     survive, which is why `Mark` is in the kind line and the tone word is in the
+     eyebrow — neither depends on this border. */
+  .identify__outcome {
+    border-left-width: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Opacity transition removed — reticle is now fully opaque in all phases.
+     The dashed border on data-phase='starting'/'blocked' is the only remaining
+     visual distinction between waiting and active states. */
+}
+
+.qr-drawer__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.qr-drawer {
+  position: relative;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  background: var(--surface-field);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--radius-plate);
+  overflow: hidden;
+  flex-direction: column;
+  display: flex;
+  animation: drawerIn 0.2s ease-out;
+}
+
+@keyframes drawerIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.qr-drawer__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3);
+  border-bottom: var(--hairline) solid var(--rule);
+  background: var(--surface-void);
+}
+
+.qr-drawer__title {
+  margin: 0;
+  font-size: var(--type-medium);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-primary);
+}
+
+.qr-drawer__body {
+  padding: var(--space-3);
+  flex: 1;
+  overflow-y: auto;
+}
+
+.qr-drawer__uid {
+  margin: var(--space-1) 0;
+  font-size: var(--type-meta);
+  color: var(--ink-secondary);
+}
+
+.qr-drawer__canvas {
+  display: flex;
+  justify-content: center;
+  margin: var(--space-2) 0;
+}
+
+.qr-drawer__foot {
+  padding: var(--space-3);
+  border-top: var(--hairline) solid var(--rule);
+  background: var(--surface-void);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.qr-drawer__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.qr-drawer__copied {
+  margin-top: var(--space-1);
+  font-size: var(--type-micro);
+  color: var(--tone-ok);
+}
+
+@media (forced-colors: active) {
+  .qr-drawer {
+    margin: var(--space-2);
+    border-left-width: 4px;
+  }
+}

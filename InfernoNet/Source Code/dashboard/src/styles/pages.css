@@ -1,0 +1,1491 @@
+/* =============================================================================
+ * Page and component styles for guide 6-34.
+ * -----------------------------------------------------------------------------
+ * ADDITIVE ONLY. This is the same contract shell.css works under: new class
+ * names, no edits to the five stylesheets that carry the product's existing
+ * vocabulary, and no raw hex anywhere. Every value below is a token.
+ *
+ * The rules that matter are the ones that keep a status from being a colour:
+ *
+ *   .metric-card__button    a whole card is one button, so it is keyboard
+ *                           reachable and has an accessible name. A div with a
+ *                           click handler is not a control, and guide 38 asks
+ *                           for semantic buttons.
+ *   .reading--absent        the hatch, not a blank. An absent cell is a cell the
+ *                           engineer left empty on purpose.
+ *   .coverage__have         a bar a reader can see, so "92% of the points carry
+ *                           a value" is not only a sentence.
+ *   .trend-legend__toggle   aria-pressed styling with a visible state, so a
+ *                           hidden series is hidden in both channels.
+ *
+ * WHERE THE EXISTING VOCABULARY IS REUSED RATHER THAN INVENTED
+ * -----------------------------------------------------------------------------
+ *   .panel, .panel__head/__title/__sub/__body/__tools/__foot
+ *   .btn, .btn--primary, .btn--quiet, .chip, .chip--plain
+ *   .notice[data-tone], .notice__kind/__title/__body/__meta/__actions
+ *   .field, .field__label/__input/__hint, .fields, .chip-group
+ *   .readings, .reading, .reading__label/__value/__number/__unit/__foot
+ *   .facts, .fact, .fact__label/__value
+ *   .data-table, .cell-num, .cell-head, .cell-label, .food-table-scroll
+ *   .withheld, .withheld__value/__note
+ *   .status-band__stat/__stat-value
+ *   .condition, .lane, .chart-stack, .chart__title, .chart-legend__key,
+ *   .chart-legend__swatch, .log-item__time, .reading__number--absent
+ *   .segmented, .segmented__option, .loading-line
+ *
+ * `.readings` is reused for the environmental grid with a `--grid3` modifier,
+ * because guide 10's 2x3 is the same divided-face treatment the reading strip
+ * already is and a second cell component would be a second thing to keep in
+ * step.
+ * ============================================================================= */
+
+
+/* =============================================================================
+ * 1. PAGE HEAD
+ * -----------------------------------------------------------------------------
+ * An h2, never an h1: the shell header already owns the document's h1 and names
+ * the device every panel below is about.
+ * ============================================================================= */
+
+.page-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-block-end: var(--space-1);
+  border-block-end: var(--seam);
+}
+
+.page-head__title {
+  margin: 0;
+  font-size: var(--type-body);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-heading);
+  color: var(--ink-primary);
+}
+
+.page-head__lede {
+  max-inline-size: var(--measure-prose);
+  font-size: var(--type-small);
+  color: var(--ink-secondary);
+  text-wrap: pretty;
+}
+
+
+/* =============================================================================
+ * 2. METRIC CARDS (guide 7, 8)
+ * ============================================================================= */
+
+.metric-row {
+  display: grid;
+  /* Five across on a wide well, wrapping rather than shrinking below the point
+     where a 4-digit value and its unit stop fitting side by side. */
+  grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr));
+  gap: var(--app-gap, var(--space-4));
+  min-inline-size: 0;
+}
+
+.metric-card {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  overflow: hidden;
+  /* The stretched-link target. The card is `position: relative` so the button's
+     `::after` can cover it; see `.metric-card__open`. */
+  position: relative;
+}
+
+.metric-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+}
+
+/* The one real control on the card.
+ *
+ * It wraps the card's TITLE and nothing else, and its `::after` covers the whole
+ * card. That is deliberate: the card is the affordance per guide §8, and putting
+ * the value, the unit, the status chip and the timestamps *inside* the button
+ * would hide all of them from a screen reader, because a button's accessible
+ * name replaces its contents. With the button around the title alone, the target
+ * is still the whole card, the name is still "Temperature — open the detail", and
+ * every number stays ordinary readable content. */
+.metric-card__open {
+  display: inline;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-align: start;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.metric-card__open::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+/* Hover is on the card, driven by the invisible overlay, so the whole surface
+   responds rather than only the title. `:has()` is used rather than a JS state
+   so there is nothing to re-render. */
+.metric-card:has(.metric-card__open:hover) {
+  background: var(--surface-field);
+}
+
+/* The focus ring is drawn on the overlay, because that is what the pointer and
+   the keyboard are actually on, and a ring around the title alone would be a
+   lie about the size of the target. `outline-offset: -2px` keeps it inside the
+   panel, whose overflow is hidden. */
+.metric-card__open:focus-visible {
+  outline: none;
+}
+
+.metric-card__open:focus-visible::after {
+  outline: var(--focus-ring-width) solid var(--focus);
+  outline-offset: -2px;
+  box-shadow: inset 0 0 0 var(--focus-ring-halo) var(--focus-halo);
+}
+
+@media (forced-colors: active) {
+  .metric-card__open:focus-visible::after {
+    outline-color: Highlight;
+  }
+}
+
+.metric-card__label {
+  font-size: var(--type-meta);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-secondary);
+  letter-spacing: var(--tracking-label);
+}
+
+/* An absent card has no control, so its label is a plain paragraph and it must
+   not inherit the underline or the pointer of `.metric-card__open`. */
+.metric-card--absent .metric-card__label {
+  color: var(--ink-secondary);
+}
+
+.metric-card__value {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  /* Reserved: the card must not change height as a value arrives, drops out or
+     comes back. Same rule as `.reading__value`. */
+  min-block-size: 2rem;
+}
+
+.metric-card__number {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  font-size: var(--type-verdict);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-data);
+  color: var(--ink-primary);
+}
+
+.metric-card__qualification {
+  font-size: var(--type-micro);
+  font-weight: var(--weight-semibold);
+  color: var(--status-sensor-fault-ink);
+  text-wrap: pretty;
+}
+
+.metric-card__secondary {
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+}
+
+.metric-card__statuses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-block-start: var(--space-1);
+}
+
+.metric-card__thresholds {
+  margin-block-start: var(--space-2);
+  padding-block-start: var(--space-2);
+  border-block-start: var(--seam);
+}
+
+.metric-card__thresholds-head {
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+}
+
+.metric-card__target-source {
+  margin-block-start: var(--space-1);
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+}
+
+.metric-card__out {
+  margin-block-start: var(--space-2);
+  padding: var(--space-2);
+  background: var(--status-sensor-fault-tint);
+  border-inline-start: var(--edge-caution);
+  font-size: var(--type-micro);
+  color: var(--ink-secondary);
+  text-wrap: pretty;
+}
+
+.metric-card__conditions {
+  margin-block-start: var(--space-1);
+}
+
+.metric-card__spark {
+  margin-block-start: var(--space-2);
+}
+
+.metric-card__foot {
+  margin-block-start: auto;
+  padding-block-start: var(--space-2);
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+  line-height: 1.4;
+  text-wrap: pretty;
+}
+
+.metric-card__foot-sep {
+  color: var(--rule-hairline);
+}
+
+.metric-card__foot-stale {
+  color: var(--status-sensor-fault-ink);
+  font-weight: var(--weight-semibold);
+}
+
+.metric-card__foot--absent {
+  margin-block-start: var(--space-2);
+  color: var(--ink-secondary);
+}
+
+/* An absent metric keeps its full size and its place in the row. A ghost card
+   reads as a card whose value failed to load, which is a different and wrong
+   statement. */
+.metric-card--absent {
+  background: var(--surface-field);
+}
+
+.metric-card__absence-kind {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--type-micro);
+  font-weight: var(--weight-semibold);
+  color: var(--status-sensor-fault-ink);
+}
+
+.metric-card__target {
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+}
+
+/* Guide 35's mobile order: temperature, then Pi, then humidity, then the rest.
+   `order` on grid items moves them without touching the DOM, so a screen reader
+   and a keyboard user still meet them in the logical order the catalogue
+   declares. */
+@media (max-width: 46rem) {
+  .metric-row {
+    grid-template-columns: 1fr;
+  }
+  .metric-card:nth-child(1) { order: 1; }
+  .metric-card:nth-child(5) { order: 2; }
+  .metric-card:nth-child(2) { order: 3; }
+  .metric-card:nth-child(3) { order: 4; }
+  .metric-card:nth-child(4) { order: 5; }
+}
+
+/* --- The sparkline ------------------------------------------------------- */
+
+.sparkline {
+  inline-size: 100%;
+  min-block-size: 34px;
+}
+
+.sparkline__plot {
+  inline-size: 100%;
+  block-size: auto;
+  overflow: visible;
+}
+
+.sparkline__series {
+  fill: none;
+  stroke: var(--accent-series);
+  stroke-width: 1.5px;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.sparkline__last {
+  fill: var(--accent-series);
+}
+
+
+/* =============================================================================
+ * 3. ENVIRONMENTAL GRID (guide 10)
+ * -----------------------------------------------------------------------------
+ * `.readings` reused; `--grid3` is the 2x3 guide 10 asks for rather than the
+ * auto-fit strip the dashboard's own reading panel uses.
+ * ============================================================================= */
+
+.readings--grid3 {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 34rem) {
+  .readings--grid3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 46.0625rem) {
+  .readings--grid3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Guide 10's 2x3, so no rule can leave a half-painted cell: six divides by both
+   two and three, and every row/column end therefore lands on a real boundary.
+   The seams that would otherwise run off the end of a row are removed on the
+   cells that have no neighbour on that side. */
+.readings--grid3 .reading:nth-child(2n):nth-child(-n + 2) {
+  border-inline-end: 0;
+}
+
+@media (min-width: 34rem) and (max-width: 46rem) {
+  .readings--grid3 .reading:nth-child(-n + 2) {
+    border-block-end: 0;
+  }
+}
+
+@media (min-width: 46.0625rem) {
+  .readings--grid3 .reading:nth-child(3n) {
+    border-inline-end: 0;
+  }
+  .readings--grid3 .reading:nth-child(-n + 3) {
+    border-block-end: 0;
+  }
+}
+
+.reading--absent {
+  background: var(--surface-field);
+}
+
+/* A note inside a `.fact__value` is a sentence, not a fragment. `.fact__value` is
+   a span in the vocabulary (it is a value, inline), so a `withheld__note` placed
+   inside one runs straight on from the number with no space: "fg-01Zone verdict
+   check food". One rule puts the note on its own line everywhere it appears. */
+.fact__value > .withheld__note,
+.fact__value > .withheld {
+  display: block;
+  margin-block-start: 0.15rem;
+}
+
+.reading__foot-mark {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: var(--weight-semibold);
+  color: var(--status-sensor-fault-ink);
+}
+
+.reading__sub {
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+  line-height: 1.4;
+}
+
+.reading-foot-note {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  padding: var(--space-3);
+  background: var(--surface-field);
+  border-block-start: var(--seam);
+  font-size: var(--type-micro);
+  color: var(--ink-secondary);
+  text-wrap: pretty;
+}
+
+
+/* =============================================================================
+ * 4. NAMED THRESHOLDS (guide 9's "labels must exist")
+ * -----------------------------------------------------------------------------
+ * A `<dl>` because each row is a label and a value, and because it is the same
+ * list the chart legend and the metric drawer read, so a limit is stated the
+ * same way everywhere it appears.
+ * ============================================================================= */
+
+.threshold-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.threshold-list__row {
+  display: grid;
+  grid-template-columns: minmax(7rem, 12rem) minmax(0, 1fr);
+  gap: var(--space-1) var(--space-3);
+  align-items: baseline;
+  padding-block: var(--space-1);
+  border-block-end: var(--seam);
+}
+
+.threshold-list__row:last-child {
+  border-block-end: 0;
+}
+
+.threshold-list__label {
+  font-size: var(--type-meta);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-secondary);
+  text-wrap: pretty;
+}
+
+.threshold-list__value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+  margin: 0;
+  min-inline-size: 0;
+}
+
+.threshold-list__value .num {
+  font-size: var(--type-small);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-primary);
+  white-space: nowrap;
+}
+
+.threshold-list__meaning {
+  flex: 1 1 16rem;
+  font-size: var(--type-micro);
+  color: var(--ink-secondary);
+  text-wrap: pretty;
+}
+
+@media (max-width: 34rem) {
+  .threshold-list__row {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* =============================================================================
+ * 5. TRENDS (guide 9, 26)
+ * ============================================================================= */
+
+.trend-legend {
+  margin-block-end: var(--space-3);
+}
+
+.trend-legend__toggle {
+  cursor: pointer;
+}
+
+/* `aria-pressed` styled as well as announced: a legend toggle that only changes
+   for a screen reader is half a control. */
+.trend-legend__toggle[aria-pressed='true'] {
+  color: var(--ink-primary);
+  border-color: var(--rule-strong);
+  background: var(--surface-plate);
+}
+
+.trend-legend__toggle[aria-pressed='false'] {
+  color: var(--ink-disabled);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.trend-legend__toggle[aria-pressed='false'] .chart-legend__swatch {
+  background: var(--rule-hairline);
+}
+
+@media (forced-colors: active) {
+  .trend-legend__toggle[aria-pressed='false'] {
+    text-decoration: line-through;
+  }
+}
+
+.trend-limits,
+.trend-gas,
+.trend-markers {
+  padding-block-start: var(--space-4);
+  margin-block-start: var(--space-4);
+  border-block-start: var(--seam-strong);
+}
+
+.trend-limits__none {
+  margin-block: var(--space-2);
+  font-size: var(--type-small);
+  color: var(--ink-secondary);
+  text-wrap: pretty;
+}
+
+/* --- Coverage strip ------------------------------------------------------
+ * The share of the window that carries a value, as a bar. "92% of the points
+ * carry a value" is a sentence; a reader who wants the shape gets one.
+ * -------------------------------------------------------------------------- */
+
+.coverage {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-block-start: var(--space-3);
+  font-size: var(--type-micro);
+  color: var(--ink-secondary);
+}
+
+.coverage__track {
+  position: relative;
+  inline-size: 8rem;
+  block-size: 0.5rem;
+  background: var(--surface-sunken);
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--radius-hairline);
+  overflow: hidden;
+}
+
+.coverage__have {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  background: var(--accent-series);
+}
+
+.coverage__notch {
+  position: absolute;
+  inset-block: 0;
+  inline-size: 2px;
+  background: var(--ink-primary);
+}
+
+@media (forced-colors: active) {
+  .coverage__track {
+    background: Canvas;
+    border-color: CanvasText;
+  }
+  .coverage__have {
+    background: CanvasText;
+  }
+  .coverage__notch {
+    background: Canvas;
+    border: 1px solid CanvasText;
+  }
+}
+
+.coverage__text {
+  flex: 1 1 20rem;
+  text-wrap: pretty;
+}
+
+/* --- Marker list and timeline --------------------------------------------
+ * Both are lists of events. `.log-item` in components.css is the table
+ * treatment; these two are the same information in a reading order.
+ * -------------------------------------------------------------------------- */
+
+.marker-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-block-start: var(--space-2);
+}
+
+.marker-list__item {
+  display: grid;
+  grid-template-columns: minmax(8rem, auto) minmax(6rem, auto) minmax(0, 1fr);
+  gap: var(--space-1) var(--space-3);
+  padding-block: var(--space-1);
+  border-block-end: var(--seam);
+  font-size: var(--type-micro);
+}
+
+.marker-list__item:last-child {
+  border-block-end: 0;
+}
+
+.marker-list__time {
+  color: var(--ink-primary);
+}
+
+.marker-list__type {
+  font-weight: var(--weight-semibold);
+  color: var(--ink-secondary);
+}
+
+.marker-list__message {
+  color: var(--ink-secondary);
+  text-wrap: pretty;
+}
+
+.marker-list__more {
+  grid-template-columns: 1fr;
+  color: var(--ink-tertiary);
+}
+
+@media (max-width: 46rem) {
+  .marker-list__item {
+    grid-template-columns: 1fr;
+  }
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  border-block-start: var(--seam);
+}
+
+.timeline__item {
+  display: grid;
+  grid-template-columns: minmax(8.5rem, auto) minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-block-end: var(--seam);
+}
+
+.timeline__item:last-child {
+  border-block-end: 0;
+}
+
+.timeline__stamp {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+}
+
+.timeline__stamp-day {
+  font-family: var(--font-mono);
+  font-size: var(--type-micro);
+  color: var(--ink-secondary);
+}
+
+.timeline__body {
+  min-inline-size: 0;
+}
+
+.timeline__type {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  font-size: var(--type-meta);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-primary);
+}
+
+.timeline__message {
+  font-size: var(--type-small);
+  color: var(--ink-secondary);
+  text-wrap: pretty;
+}
+
+.timeline__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  margin-block-start: var(--space-1);
+}
+
+@media (max-width: 46rem) {
+  .timeline__item {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+}
+
+
+/* =============================================================================
+ * 6. DRAWER
+ * -----------------------------------------------------------------------------
+ * A panel that takes the reading position on top of the page it was opened
+ * from, rather than a top-layer modal centred over the viewport. See
+ * Drawer.tsx for why the focus trap is hand-written.
+ * ============================================================================= */
+
+.drawer-layer {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-sticky);
+  display: grid;
+  place-items: end center;
+  background: var(--surface-void);
+  opacity: 0.72;
+  overflow-y: auto;
+  padding: var(--space-4);
+  /* Same gesture reasoning as the shell's scrim: a drag that ends here must
+     not chain to the page underneath. */
+  touch-action: none;
+}
+
+@media (min-width: 60rem) {
+  .drawer-layer {
+    place-items: center;
+    justify-items: end;
+    padding: var(--space-5);
+  }
+}
+
+.drawer {
+  inline-size: 100%;
+  max-inline-size: 40rem;
+  max-block-size: min(86vh, 52rem);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-plate);
+  border: var(--seam-strong);
+  border-radius: var(--radius-plate);
+  /* The third elevation is budgeted in tokens.css for true overlays, and this
+     is one: it genuinely floats over the page it came from. */
+  box-shadow: var(--elevation-overlay);
+  overflow: hidden;
+}
+
+@media (min-width: 60rem) {
+  .drawer {
+    max-inline-size: 44rem;
+    max-block-size: 84vh;
+  }
+}
+
+.drawer:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.drawer__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-3);
+  background: var(--surface-field);
+  border-block-end: var(--seam);
+}
+
+.drawer__titles {
+  flex: 1 1 14rem;
+  min-inline-size: 0;
+}
+
+.drawer__title {
+  margin: 0;
+  font-size: var(--type-body);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-heading);
+  overflow-wrap: anywhere;
+}
+
+.drawer__sub {
+  margin-block-start: 0.15rem;
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+  text-wrap: pretty;
+}
+
+.drawer__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.drawer__body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-3);
+}
+
+@media print {
+  .drawer-layer {
+    position: static;
+    opacity: 1;
+    padding: 0;
+    background: none;
+  }
+  .drawer {
+    max-block-size: none;
+    box-shadow: none;
+    border: 0;
+  }
+  .drawer__tools {
+    display: none;
+  }
+}
+
+
+/* =============================================================================
+ * 7. DRAWER BODIES
+ * ============================================================================= */
+
+.metric-detail,
+.item-detail,
+.alert-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.metric-detail__headline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+}
+
+.metric-detail__value {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+}
+
+.metric-detail__limits,
+.metric-detail__provenance,
+.item-detail__exposure,
+.item-detail__door,
+.item-detail__history,
+.alert-detail__related {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-block-start: var(--space-3);
+  border-block-start: var(--seam);
+}
+
+.metric-detail__limits .threshold-list,
+.item-detail__exposure .threshold-list {
+  margin-block-start: var(--space-1);
+}
+
+.item-detail__status,
+.alert-detail__status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+}
+
+.item-detail__status-note {
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+  text-wrap: pretty;
+}
+
+.alert-detail__detail {
+  font-size: var(--type-small);
+  color: var(--ink-primary);
+  max-inline-size: 72ch;
+  text-wrap: pretty;
+}
+
+.panel__sub--boxed {
+  display: block;
+  padding: var(--space-3);
+  background: var(--surface-field);
+  border: var(--seam);
+  border-radius: var(--radius-control);
+}
+
+.panel__sub--boxed .facts {
+  margin-block-start: var(--space-2);
+}
+
+
+/* =============================================================================
+ * 8. CONDITION FACT ROWS (guide 14)
+ * -----------------------------------------------------------------------------
+ * Current value / limit / started, each of which is either real or an explicit
+ * absence with its reason. The label is on every cell so a screenshot of one
+ * number is never ambiguous.
+ * ============================================================================= */
+
+.condition__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin-block-start: var(--space-2);
+}
+
+.condition__fact {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  font-size: var(--type-micro);
+}
+
+.condition__fact-label {
+  color: var(--ink-tertiary);
+}
+
+.condition__fact .withheld__value {
+  font-size: var(--type-micro);
+}
+
+
+/* =============================================================================
+ * 9. DONUT AND FOOD SUMMARY (guide 16)
+ * ============================================================================= */
+
+.food-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: center;
+}
+
+@media (min-width: 34rem) {
+  .food-summary {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+}
+
+.donut {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.donut__ring {
+  display: block;
+}
+
+.donut__track {
+  stroke: var(--surface-sunken);
+}
+
+.donut__slice[data-tone='ok'] { stroke: var(--status-fresh-ink); }
+.donut__slice[data-tone='warn'] { stroke: var(--status-use-soon-ink); }
+.donut__slice[data-tone='crit'] { stroke: var(--status-check-food-ink); }
+.donut__slice[data-tone='unknown'] { stroke: var(--status-sensor-fault-ink); }
+.donut__slice[data-tone='neutral'] { stroke: var(--rule-strong); }
+
+.donut__caption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.donut__total {
+  font-size: var(--type-verdict);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  color: var(--ink-primary);
+}
+
+.donut__total-label {
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+}
+
+.donut--empty {
+  padding: var(--space-3);
+  background: var(--surface-field);
+  border: var(--seam);
+  border-radius: var(--radius-control);
+}
+
+.donut__caption {
+  font-size: var(--type-small);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-secondary);
+}
+
+.donut__empty-note {
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+  text-wrap: pretty;
+  text-align: center;
+}
+
+.food-counts {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+}
+
+.food-counts__row {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, 9rem) minmax(0, 1fr);
+  gap: var(--space-2) var(--space-3);
+  align-items: baseline;
+  padding-block: var(--space-2);
+  border-block-end: var(--seam);
+}
+
+.food-counts__row:last-child {
+  border-block-end: 0;
+}
+
+.food-counts__row dt {
+  font-size: var(--type-small);
+  font-weight: var(--weight-semibold);
+  color: var(--tone-ink, var(--ink-secondary));
+}
+
+.food-counts__row dd {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  min-inline-size: 0;
+}
+
+.food-counts__row .num {
+  font-size: var(--type-readout);
+  font-weight: var(--weight-bold);
+  color: var(--ink-primary);
+}
+
+.food-counts__note {
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+  text-wrap: pretty;
+}
+
+@media (max-width: 28rem) {
+  .food-counts__row {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+}
+
+
+/* =============================================================================
+ * 10. QUICK STATS AND ACTIONS
+ * ============================================================================= */
+
+.quick-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-gap, var(--space-4));
+}
+
+.quick-stat {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.quick-stat__mark {
+  color: var(--tone-ink, var(--status-informational-ink));
+  padding-block-start: 0.1rem;
+}
+
+.quick-stat__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
+.quick-stat__word {
+  font-size: var(--type-verdict);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  color: var(--tone-ink, var(--ink-primary));
+}
+
+.quick-stat__why {
+  font-size: var(--type-small);
+  color: var(--ink-secondary);
+  text-wrap: pretty;
+}
+
+.quick-actions__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.quick-actions__list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+}
+
+.quick-actions__why {
+  flex: 1 1 18rem;
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+  text-wrap: pretty;
+}
+
+/* The empty dangerous block. Visually separated, as guide 46.8 requires, and
+   explicit that it is empty because nothing exists rather than because nothing
+   happens. */
+.quick-actions__danger {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  align-items: flex-start;
+}
+
+.quick-actions__danger .label {
+  color: var(--status-administrative-ink);
+}
+
+/* --- The compact absence -------------------------------------------------
+ * The same tone, the same shape and the same "nothing is reporting this"
+ * wording as `.notice`, at three lines instead of twelve. See AbsenceRow.
+ * -------------------------------------------------------------------------- */
+
+.absence-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-3);
+  border-block-end: var(--seam);
+  color: var(--tone-ink, var(--status-sensor-fault-ink));
+}
+
+.absence-row:last-child {
+  border-block-end: 0;
+}
+
+.absence-row > .mark {
+  margin-block-start: 0.15rem;
+}
+
+.absence-row__kind {
+  font-size: var(--type-micro);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-tertiary);
+  letter-spacing: var(--tracking-label);
+}
+
+.absence-row__subject {
+  margin: 0;
+  font-size: var(--type-small);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-primary);
+}
+
+.absence-row__why {
+  margin-block-start: var(--space-1);
+  font-size: var(--type-micro);
+  color: var(--ink-secondary);
+  text-wrap: pretty;
+  max-inline-size: 46ch;
+}
+
+
+/* =============================================================================
+ * 11. DEVICE HEALTH AND DEVICE TABLE
+ * ============================================================================= */
+
+.part-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-inline-size: 0;
+}
+
+.part-cell__name {
+  font-family: var(--font-mono);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-primary);
+  overflow-wrap: anywhere;
+}
+
+.part-cell__class {
+  font-size: var(--type-micro);
+  font-weight: var(--weight-regular);
+  color: var(--ink-tertiary);
+}
+
+.part-cell__what {
+  display: block;
+  margin-block-start: var(--space-1);
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+  text-wrap: pretty;
+  max-inline-size: 34ch;
+}
+
+.part-cell__na {
+  font-size: var(--type-small);
+  font-style: italic;
+  color: var(--ink-tertiary);
+}
+
+.absence-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-block-start: var(--space-2);
+  font-size: var(--type-small);
+  color: var(--ink-secondary);
+  text-wrap: pretty;
+}
+
+.absence-list > li {
+  padding-inline-start: var(--space-3);
+  border-inline-start: var(--edge-neutral);
+}
+
+.device-detail {
+  padding: var(--space-3);
+  border-block-end: var(--seam);
+}
+
+.device-detail:last-child {
+  border-block-end: 0;
+}
+
+.device-detail__name {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--type-small);
+  font-weight: var(--weight-bold);
+  color: var(--ink-primary);
+}
+
+
+/* =============================================================================
+ * 12. AUDIT TRAIL (guide 31)
+ * ============================================================================= */
+
+.audit {
+  display: flex;
+  flex-direction: column;
+}
+
+.audit__entry {
+  padding: var(--space-3);
+  border-block-end: var(--seam);
+}
+
+.audit__entry:last-child {
+  border-block-end: 0;
+}
+
+.audit__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+}
+
+.audit__rev {
+  font-size: var(--type-small);
+  font-weight: var(--weight-bold);
+  color: var(--ink-primary);
+}
+
+.audit__when,
+.audit__user {
+  font-size: var(--type-micro);
+  color: var(--ink-secondary);
+}
+
+.audit__basis,
+.audit__reason {
+  margin-block-start: var(--space-1);
+  font-size: var(--type-small);
+  color: var(--ink-secondary);
+  text-wrap: pretty;
+}
+
+.audit__reason-label {
+  display: block;
+  font-size: var(--type-micro);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-tertiary);
+}
+
+.audit__table {
+  margin-block-start: var(--space-2);
+}
+
+
+/* =============================================================================
+ * 13. FILTERS, FORMS, NOTIFICATIONS
+ * ============================================================================= */
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2) var(--space-3);
+  padding-block-end: var(--space-2);
+}
+
+.filter-bar__search {
+  flex: 1 1 16rem;
+}
+
+.rfid-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2) var(--space-3);
+  margin-block: var(--space-3);
+}
+
+.rfid-form .field {
+  flex: 1 1 16rem;
+}
+
+.rfid-result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  background: var(--tone-tint, var(--surface-field));
+  border: var(--hairline) solid var(--tone-edge, var(--rule-hairline));
+  border-inline-start: var(--edge-verdict);
+  border-radius: var(--radius-control);
+}
+
+.rfid-result__kind {
+  font-size: var(--type-micro);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-secondary);
+}
+
+.rfid-result__title {
+  font-size: var(--type-body);
+  font-weight: var(--weight-bold);
+  color: var(--ink-primary);
+}
+
+.rfid-result__meta {
+  font-family: var(--font-mono);
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+}
+
+.rfid-result__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+  font-size: var(--type-small);
+  color: var(--ink-secondary);
+}
+
+.notify-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.notify-list__item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-1) var(--space-2);
+  align-items: baseline;
+  padding: var(--space-2) var(--space-3);
+  border-block-end: var(--seam);
+  color: var(--tone-ink, var(--ink-primary));
+}
+
+.notify-list__item:last-child {
+  border-block-end: 0;
+}
+
+.notify-list__title {
+  font-size: var(--type-small);
+  font-weight: var(--weight-semibold);
+}
+
+.notify-list__meta {
+  grid-column: 2;
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+}
+
+.panel__foot--bare {
+  border-start-start-radius: var(--radius-plate);
+  border-start-end-radius: var(--radius-plate);
+  border-block-start: 0;
+}
+
+
+/* =============================================================================
+ * 14. FORCED COLOURS
+ * -----------------------------------------------------------------------------
+ * The additions that were carried by a fill alone. `.coverage__track` is handled
+ * above; this covers the toggle chip and the sparkline, which both lose their
+ * meaning when a hue becomes Canvas.
+ * ============================================================================= */
+
+@media (forced-colors: active) {
+  .metric-card:has(.metric-card__open:hover) {
+    background: Highlight;
+    color: HighlightText;
+  }
+
+  .metric-card__out {
+    border-inline-start: 3px solid CanvasText;
+  }
+
+  .sparkline__series,
+  .sparkline__last {
+    fill: CanvasText;
+    stroke: CanvasText;
+  }
+
+  .food-counts__row {
+    border-block-end-color: CanvasText;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .metric-card__button:hover:not(:disabled),
+  .trend-legend__toggle[aria-pressed='true'] {
+    border-color: var(--ink-secondary);
+  }
+
+  .threshold-list__row,
+  .food-counts__row,
+  .marker-list__item,
+  .timeline__item,
+  .audit__entry {
+    border-block-end-color: var(--ink-tertiary);
+  }
+}
+
+@media print {
+  .metric-row,
+  .filter-bar,
+  .quick-actions,
+  .drawer__tools {
+    display: block;
+  }
+
+  .metric-card,
+  .threshold-list__row,
+  .coverage,
+  .audit__entry {
+    break-inside: avoid;
+  }
+
+  .coverage__have,
+  .sparkline__series,
+  .sparkline__last {
+    print-color-adjust: exact;
+  }
+}

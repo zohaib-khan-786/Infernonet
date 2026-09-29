@@ -1,0 +1,54 @@
+-- The tag an identification event is about.
+--
+-- An event is the device saying "this happened at this instant". Most of them
+-- are conditions, and the row needs nothing beyond type, message and the clock.
+-- An identification event is different in one respect: the interesting part is
+-- not the event but the uid in it. "A tag was presented" is a fact the operator
+-- cannot act on; "uid 1778F106 was presented at 12:04:11" is one they can, and
+-- it is the answer to "which item was that, and has it since been replaced".
+-- So the uid is stored with the event rather than being recoverable only from
+-- the message prose.
+--
+-- NULL means "this event carried no tag". That is not a gap to be filled in:
+-- eleven of the twelve event types are conditions and will never have one, and
+-- an event with no tag is the normal case, not an incomplete row. A device
+-- build predating the field sends no `uid` and stays valid, so NULL is the
+-- honest reading. The wire schema validates it with the same hex rule the
+-- registration path uses, so a stored uid is a bounded 1-64 character hex
+-- string or nothing at all - never free text.
+--
+-- This records an OBSERVATION and nothing more. There is deliberately no
+-- foreign key to `inventory_item`, and no trigger:
+--
+--   - A scan for a uid that is not registered is a normal, expected event, so
+--     the column cannot be a reference that has to resolve. Enforcing one would
+--     mean a foreign key failure - a 400, i.e. a dead device - for a stranger
+--     walking a new tag past the reader.
+--   - Nothing about a scan changes a fault mask. `confirmed_fault_mask` and
+--     `availability_mask` are the device's to report (R-09, R-10, R-11) and a
+--     tag being read is not one of them. A scan must never raise a storage fault
+--     or any other, and keeping this table free of any write path into `device`
+--     is what makes that structural rather than a rule somebody has to remember.
+--   - SRS 1.6 (v) L227 forbids using a reading to identify which specific food
+--     item caused a condition. A uid column on an event row can express "this
+--     tag was here"; it cannot express "this item caused this", and nothing
+--     joins the two.
+--
+-- Additive, the same shape as 003: no column is dropped, renamed, retyped or
+-- re-constrained, no index is rebuilt, and every existing row keeps its
+-- identity and history. A database created before this file has NULL here,
+-- which reads as "no tag" and needs no backfill.
+--
+-- Idempotency is the migration ledger's job, not this statement's: db/index.js
+-- applies each numbered file exactly once, in filename order, inside a
+-- transaction. SQLite has no `ADD COLUMN IF NOT EXISTS`, and writing one by hand
+-- would risk diverging from the file the ledger already knows about.
+
+ALTER TABLE event ADD COLUMN uid TEXT;
+
+-- The lookup is always scoped to one device, and `UNIQUE (device_id, uid)` on
+-- `inventory_item` is what makes a uid resolvable at all. The composite index
+-- below is for the event-history path: "show me every tag ever presented on this
+-- device, newest first". It is not used by the uid lookup, which hits
+-- inventory_item's existing unique index.
+CREATE INDEX idx_event_device_uid ON event(device_id, uid);

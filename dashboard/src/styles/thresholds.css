@@ -1,0 +1,118 @@
+﻿
+/* ==========================================================================
+   Administrator limits
+   Form controls and the change log. The rest of the panel is composed from
+   existing primitives (.panel, .notice, .chip, .btn, .status-band__stat);
+   only the input grid and the history list are new shapes.
+   ========================================================================== */
+
+.chip-group {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--space-4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.field__label {
+  font-size: var(--type-meta);
+  color: var(--ink-secondary);
+  letter-spacing: 0.02em;
+}
+
+/* Units are metadata, never the value: keeping them tertiary stops a reader
+   treating "(°C)" as part of the number they should compare against a limit. */
+.field__unit {
+  color: var(--ink-tertiary);
+}
+
+.field__input {
+  font: inherit;
+  font-size: var(--type-body);
+  /* Tabular figures so digits do not shift sideways while typing, which makes
+     a mistyped digit much easier to miss. */
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-primary);
+  background: var(--surface-field);
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--radius-control);
+  padding: var(--space-2) var(--space-3);
+  min-height: 2.5rem;
+  width: 100%;
+}
+
+.field__input:focus-visible {
+  outline: 2px solid var(--rule-strong);
+  outline-offset: 1px;
+}
+
+.field__hint {
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+textarea.field__input {
+  resize: vertical;
+  min-height: 3.5rem;
+}
+
+.notice__list {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.history__item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-3);
+  align-items: baseline;
+  padding: var(--space-2) 0;
+  border-top: var(--seam);
+}
+
+.history__item:first-child {
+  border-top: 0;
+}
+
+.history__rev {
+  font-family: var(--font-mono);
+  font-size: var(--type-meta);
+  color: var(--ink-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.history__meta {
+  font-size: var(--type-meta);
+  color: var(--ink-tertiary);
+}
+
+.history__note {
+  grid-column: 1 / -1;
+  font-size: var(--type-small);
+  color: var(--ink-secondary);
+}
+
+.history__title {
+  margin-top: var(--space-4);
+}

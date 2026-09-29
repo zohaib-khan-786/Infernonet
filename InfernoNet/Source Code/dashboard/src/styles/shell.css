@@ -1,0 +1,765 @@
+/* =============================================================================
+ * Application shell - sidebar, global header, content grid.
+ * -----------------------------------------------------------------------------
+ * Guide 3 (global layout), 4 (sidebar), 5 (global header), 35 (responsive).
+ * Phase 1 only. Nothing in here places a page's cards; it builds the frame they
+ * will go in, and the frame is the only thing in the product that has to be
+ * right before any of them exist.
+ *
+ * TOKENS ONLY. A raw hex in this file is a bug, exactly as in the other three
+ * stylesheets.
+ *
+ * WHY THE SHELL GETS ITS OWN STYLESHEET
+ * -----------------------------------------------------------------------------
+ * `layout.css` and `components.css` are tuned and audited, and neither is in
+ * this pass's ownership, so the shell is additive: new class names for the
+ * frame, no edits to the files that carry the product's existing vocabulary.
+ * Two overrides of existing rules are made at the end of this file, and both
+ * are forced by adding a 240px column that those rules were never written
+ * against. They are marked OVERRIDE and each says why.
+ *
+ * THE FOUR DIMENSIONS FROM GUIDE 3, AND WHERE THEY LIVE
+ * -----------------------------------------------------------------------------
+ *   sidebar   --app-sidebar-width   240px, 256px on desktop   (240-260)
+ *   header    --app-header-height    68px                     (68-76)
+ *   content   --app-content-max     1800px
+ *   card gap  --app-gap             16px = --space-4          (14-18)
+ *
+ * `--app-content-max` is 1800px as the guide asks. Note that this is wider than
+ * `--shell-max` (1560px) in tokens.css, which was chosen for reading measure
+ * and applies to the retired `.shell` wrapper. The guide's number wins for the
+ * shell's own content well, and the two never meet: `.shell` is no longer
+ * rendered (App.tsx composes into `.app-shell__content` instead) so there is
+ * nothing left to cap at 1560px.
+ *
+ * THE INK LADDER IN HERE
+ * -----------------------------------------------------------------------------
+ * The header and the sidebar sit on the shell's two dark surfaces, so they use
+ * the bezel ink ladder - `--ink-on-dark*` - and never `--ink-primary`, which is
+ * 1.06:1 against `--surface-bezel`. The sidebar is on `--surface-sunken` (the
+ * guide's own sidebar colour, #081525) rather than the bezel, because the bezel
+ * is one region: the sticky header, per tokens.css section 7. Two adjacent dark
+ * surfaces with a seam between them read as two panels, which is what this is.
+ *
+ * =============================================================================
+ */
+
+
+/* =============================================================================
+ * 1. THE FRAME
+ * ======================================================================= */
+
+.app-shell {
+  --app-sidebar-width: 15rem;    /*  240px  guide floor */
+  --app-header-height: 4.25rem;  /*   68px  guide floor */
+  --app-content-max: 1800px;
+  --app-gap: var(--space-4);     /*   16px  guide says 14-18 */
+  /* Two steps on top of --z-sticky (20): the scrim covers the sticky header,
+   * the drawer covers the scrim. --z-skip (100) is still above both, which is
+   * correct - but the skip link is `inert` for as long as the drawer is open,
+   * so the two are never on screen at once and never fight. */
+  --app-z-scrim: 30;
+  --app-z-drawer: 40;
+
+  display: grid;
+  grid-template-columns: var(--app-sidebar-width) minmax(0, 1fr);
+  min-block-size: 100vh;
+  min-block-size: 100dvh;
+  background: var(--surface-void);
+  /* A guard, not the mechanism: guide 35 forbids the whole dashboard scrolling
+   * sideways, and the mechanism for that is `min-inline-size: 0` on every grid
+   * child plus the panels' own `.food-table-scroll`. `clip` rather than
+   * `hidden` deliberately - `overflow: hidden` would make this element a
+   * scroll container and silently kill the sticky sidebar and header. */
+  overflow-x: clip;
+}
+
+@media (min-width: 90rem) {
+  .app-shell {
+    /* 256px. The guide allows up to 260 and the extra 16px is what lets every
+     * nav label sit on one line beside its "Not built" chip. */
+    --app-sidebar-width: 16rem;
+  }
+}
+
+/* The column that holds the header and the page. `min-inline-size: 0` is the
+ * load-bearing declaration in this file: a grid item's default `min-width` is
+ * `auto`, which is its min-content width, and one wide child (a table, a long
+ * device id) is then enough to push the whole shell wider than the viewport.
+ * This is the horizontal-scroll bug of guide 35, and it is a one-word fix. */
+.app-shell__body {
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* =============================================================================
+ * 2. GLYPHS
+ * -----------------------------------------------------------------------------
+ * Sized here for the reason `.mark` is sized in components.css: an inline
+ * `<svg>` with a viewBox and no width or height has no intrinsic size, so
+ * inside a flex button it either collapses to nothing or balloons. The default
+ * is `.mark`'s size; the two places that want another size say so.
+ * ======================================================================= */
+
+.glyph {
+  flex: none;
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+}
+
+
+/* =============================================================================
+ * 3. THE CONTENT WELL - the 12-column grid the guide asks for
+ * ======================================================================= */
+
+.app-shell__content {
+  inline-size: 100%;
+  max-inline-size: var(--app-content-max);
+  margin-inline: auto;
+  padding: var(--space-4) var(--space-4) var(--space-7);
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--app-gap);
+  align-content: start;
+}
+
+@media (min-width: 60rem) {
+  .app-shell__content {
+    /* 24px. The guide asks for 20-28px of content padding. */
+    padding: var(--space-5) var(--space-5) var(--space-7);
+    gap: var(--space-5);
+  }
+}
+
+/* Everything in the well spans all twelve columns by default, so a page is
+ * written top to bottom and nothing has to opt in to being full width. A card
+ * in a later phase places itself with `grid-column: span N` and nothing else
+ * changes. The shell deliberately ships no `span-*` classes: they would be
+ * twelve rules with no user until the dashboard page exists to place a card. */
+.app-shell__content > * {
+  grid-column: 1 / -1;
+  min-inline-size: 0;
+}
+
+
+/* =============================================================================
+ * 4. THE SIDEBAR (guide 4)
+ * ======================================================================= */
+
+.app-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-3);
+  background: var(--surface-sunken);
+  border-inline-end: var(--seam);
+  color: var(--ink-on-dark);
+  /* A sticky column, not a fixed one: the shell is one scrolling document and
+   * the sidebar travels with it, pinned. `align-self: start` is what gives the
+   * sticky item somewhere to travel - stretched to the full row height it would
+   * have no slack left and would not move at all. */
+  align-self: start;
+  position: sticky;
+  inset-block-start: 0;
+  block-size: 100vh;
+  block-size: 100dvh;
+  /* The column does not scroll; the nav inside it does. Guide 4 puts the status
+   * card at the BOTTOM, and twelve nav rows plus a brand block is taller than a
+   * 768px viewport, so a column that scrolled as one piece would take the status
+   * card below the fold - which is the one thing in here that must never be
+   * below the fold. */
+  overflow: hidden;
+}
+
+/* --- Brand block --------------------------------------------------------- */
+
+.sidebar__brand {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding-block-end: var(--space-3);
+  border-block-end: var(--seam);
+}
+
+.sidebar__wordmark {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-inline-size: 0;
+}
+
+.sidebar__name {
+  font-size: var(--type-readout);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-heading);
+  line-height: var(--leading-snug);
+  color: var(--ink-on-dark);
+}
+
+.sidebar__tagline {
+  font-size: var(--type-micro);
+  color: var(--ink-on-dark-2);
+  line-height: 1.35;
+  text-wrap: pretty;
+}
+
+.sidebar__version {
+  margin-block-start: 0.15rem;
+  font-family: var(--font-mono);
+  font-size: var(--type-micro);
+  color: var(--ink-on-dark-3);
+  letter-spacing: var(--tracking-data);
+}
+
+/* The shield carries no state, so it is decoration and is hidden from the
+ * accessibility tree; the wordmark beside it is the name. Same contract as
+ * `.mark` in Mark.tsx. */
+.sidebar__shield {
+  flex: none;
+  inline-size: 2rem;
+  block-size: 2rem;
+  margin-block-start: 0.1rem;
+  color: var(--accent-on-dark);
+}
+
+.sidebar__close {
+  margin-inline-start: auto;
+  flex: none;
+}
+
+/* --- Nav ----------------------------------------------------------------- */
+
+.sidebar__nav {
+  flex: 1 1 auto;
+  min-block-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  overflow-y: auto;
+  /* A gesture that runs out of nav does not chain to the page underneath, and
+   * the gutter is reserved so the rows never reflow when the list grows past
+   * the fold. The two scrollbar declarations are here because `color-scheme` is
+   * `light` in base.css - a light scrollbar drawn on this column would be a
+   * white stripe down a dark panel on Windows. Unprefixed `scrollbar-color` is
+   * ignored where it is unsupported, which costs nothing. */
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule-strong) var(--surface-sunken);
+}
+
+.nav-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.nav-section__title {
+  margin: 0;
+  padding-inline: var(--space-2);
+  font-size: var(--type-micro);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-on-dark-3);
+  letter-spacing: var(--tracking-label);
+}
+
+.nav-section__list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.nav-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  inline-size: 100%;
+  min-block-size: var(--control-min);
+  padding: 0.3rem var(--space-2);
+  background: transparent;
+  border: 0;
+  border-inline-start: 2px solid transparent;
+  border-radius: 0 var(--radius-control) var(--radius-control) 0;
+  color: var(--ink-on-dark-2);
+  font-family: var(--font-sans);
+  font-size: var(--type-small);
+  font-weight: var(--weight-medium);
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color var(--motion-instant) var(--ease-standard),
+    color var(--motion-instant) var(--ease-standard),
+    border-color var(--motion-instant) var(--ease-standard);
+}
+
+.nav-item:hover {
+  background: var(--surface-bezel-raised);
+  color: var(--ink-on-dark);
+}
+
+.nav-item__label {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Guide 4: "Active item has a filled background and subtle left/accent
+ * indicator." Every item reserves the 2px bar with `transparent` so marking the
+ * current page shifts no text - an indicator that reflows the list on every
+ * navigation is an indicator people stop seeing. */
+.nav-item[aria-current='page'] {
+  background: var(--surface-bezel-raised);
+  border-inline-start-color: var(--accent-link);
+  color: var(--ink-on-dark);
+  font-weight: var(--weight-semibold);
+}
+
+/* A page that does not exist yet. `aria-disabled` rather than `disabled` on
+ * purpose: `disabled` takes the item out of the tab order, so a keyboard user
+ * would never discover that the destination exists and is coming. The word
+ * "Not built" is the affordance the guide needs and it is a word, not a colour,
+ * so it survives greyscale, forced colours and a colourblind reader. */
+.nav-item[aria-disabled='true'] {
+  color: var(--ink-disabled);
+  cursor: default;
+}
+
+.nav-item[aria-disabled='true']:hover {
+  background: transparent;
+  color: var(--ink-disabled);
+}
+
+.nav-item[aria-disabled='true'] .chip {
+  /* --ink-disabled is 3.42:1, which WCAG 1.4.3 exempts for a disabled control
+   * but which is a poor trade for a chip that is the only thing telling the
+   * reader the page is coming. The chip carries the status instead, in
+   * --ink-on-dark-3 at 5.72:1. */
+  color: var(--ink-on-dark-3);
+  border-color: var(--rule-bezel);
+}
+
+.sidebar__note {
+  padding-inline: var(--space-2);
+  text-wrap: pretty;
+}
+
+/* --- The bottom status card (guide 4) ------------------------------------ */
+
+/* Built ON `.link-state` rather than beside it: that class is already the
+ * product's link readout, with the three transport lamps, the word beside the
+ * lamp, a forced-colours shape per state and the one ambient pulse in the
+ * system. A second indicator would have been a second set of states to keep
+ * honest. The two additions are wrapping (so the sentence drops to its own line
+ * under the lamp) and top alignment. */
+.sidebar__status {
+  flex: none;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  row-gap: var(--space-1);
+}
+
+.sidebar__status-word {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-on-dark);
+}
+
+.sidebar__status-sentence {
+  flex: 1 0 100%;
+  font-size: var(--type-micro);
+  font-weight: var(--weight-regular);
+  color: var(--ink-on-dark-2);
+  line-height: 1.4;
+  text-wrap: pretty;
+}
+
+.sidebar__status-counts {
+  flex: 1 0 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding-block-start: var(--space-1);
+}
+
+.sidebar__status-counts .status-band__stat {
+  font-size: var(--type-micro);
+  color: var(--ink-on-dark-2);
+}
+
+.sidebar__status-counts .status-band__stat-value {
+  color: var(--ink-on-dark);
+}
+
+
+/* =============================================================================
+ * 5. THE GLOBAL HEADER (guide 5)
+ * ======================================================================= */
+
+.app-header {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  min-block-size: var(--app-header-height);
+  padding: var(--space-2) var(--space-4);
+  /* The bezel. tokens.css section 7 gives it to the sticky header, and the
+   * connection indicator is built for it (`.link-state` is a bezel-well chip
+   * with bezel ink) - put the header on a light surface and the one control
+   * that says whether the numbers below it are live would be the odd one out. */
+  background: var(--surface-bezel);
+  color: var(--ink-on-dark);
+  border-block-end: var(--hairline) solid var(--rule-bezel-strong);
+  padding-block-start: max(var(--space-2), env(safe-area-inset-top));
+  box-shadow: var(--elevation-raised);
+}
+
+.app-header__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  margin-inline-end: auto;
+}
+
+.app-header__cabinet {
+  flex: none;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  color: var(--ink-on-dark-2);
+}
+
+.app-header__titles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-inline-size: 0;
+}
+
+/* The page's h1. Guide 5 says the header identifies the currently selected
+ * device, and on a single-device page that device IS the page - the panels below
+ * it are all about that one cabinet. When no device has ever reported there is
+ * no subject to name, so the wordmark stands in and the h1 keeps existing. */
+.app-header__title {
+  font-size: var(--type-body);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-heading);
+  line-height: var(--leading-snug);
+  color: var(--ink-on-dark);
+  overflow-wrap: anywhere;
+}
+
+.app-header__title--empty {
+  font-style: italic;
+  font-weight: var(--weight-medium);
+  color: var(--ink-on-dark-3);
+}
+
+.app-header__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  font-size: var(--type-micro);
+  color: var(--ink-on-dark-2);
+}
+
+.app-header__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+/* The clock is the browser's, and says so. The device's own clock is a
+ * different clock and may be untrusted (guide 36, and the clock banner in the
+ * page), so the two must never be confused for one stamp of "now". */
+.app-header__clock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.05rem;
+  min-inline-size: 0;
+}
+
+.app-header__clock-time {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  font-size: var(--type-meta);
+  color: var(--ink-on-dark);
+  letter-spacing: var(--tracking-data);
+  line-height: 1.2;
+}
+
+.app-header__clock-caption {
+  font-size: var(--type-micro);
+  color: var(--ink-on-dark-3);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* --- Controls on the shell's dark surfaces ---------------------------------
+ * base.css holds `.masthead .btn` and `.masthead .input` for exactly this
+ * problem and they are contrast-audited, but they are scoped to a class this
+ * shell does not render and base.css is not in this pass's ownership. So the
+ * ladder is restated here against the same tokens, in the same order, and it
+ * cannot drift in value: --rule-bezel-control, --surface-bezel-well,
+ * --surface-bezel-raised, --ink-on-dark-2/3.
+ *
+ * The border is the load-bearing half. A bezel button with a
+ * --rule-bezel-control edge is 3.99:1 and reads as a control at rest; without
+ * it, a quiet button on this surface is unlabelled floating text that only
+ * becomes obviously a button on hover.
+ *
+ * The sidebar is listed with the header because it is the same problem on the
+ * same kind of surface - the drawer's close button lives there and would
+ * otherwise carry --rule-hairline at 1.31:1.
+ */
+.app-header .btn,
+.app-sidebar .btn {
+  background: transparent;
+  color: var(--ink-on-dark-2);
+  border-color: var(--rule-bezel-control);
+}
+
+.app-header .btn:hover:not(:disabled),
+.app-sidebar .btn:hover:not(:disabled) {
+  background: var(--surface-bezel-raised);
+  color: var(--ink-on-dark);
+  border-color: var(--rule-bezel-control);
+}
+
+.app-header .btn:disabled,
+.app-sidebar .btn:disabled {
+  color: var(--ink-on-dark-3);
+  background: transparent;
+  border-color: var(--rule-bezel-control);
+}
+
+.app-header .btn--quiet,
+.app-sidebar .btn--quiet {
+  border-color: var(--rule-bezel-control);
+}
+
+.app-header .btn--quiet:hover:not(:disabled),
+.app-sidebar .btn--quiet:hover:not(:disabled) {
+  background: var(--surface-bezel-raised);
+  color: var(--ink-on-dark);
+  border-color: var(--rule-bezel-control);
+}
+
+/* The device switch. `.field` + `.field__input` are the product's form
+ * primitives and are used unchanged; only the bezel surface is swapped. */
+.app-header .field {
+  gap: 0.1rem;
+}
+
+.app-header .field__label {
+  color: var(--ink-on-dark-2);
+}
+
+.app-header .field__input {
+  background: var(--surface-bezel-well);
+  color: var(--ink-on-dark);
+  border-color: var(--rule-bezel-control);
+  min-inline-size: 8rem;
+  max-inline-size: 14rem;
+  cursor: pointer;
+}
+
+.app-header .field__input:hover {
+  border-color: var(--ink-on-dark-2);
+}
+
+/* `.field__input:focus-visible` in thresholds.css sets a --rule-strong outline,
+ * which is 1.06:1 on the bezel. The base `.on-dark` ring in base.css is
+ * --accent-on-dark at 9.56:1, so it wins here - later rule, same specificity,
+ * and it is the one built for this surface. */
+.app-header .field__input:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent-on-dark);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: 0 0 0 var(--focus-ring-halo) var(--surface-bezel);
+}
+
+
+/* =============================================================================
+ * 6. THE CONNECTION INDICATOR (guide 5)
+ * ======================================================================= */
+
+.link-state__word {
+  font-weight: var(--weight-semibold);
+}
+
+.link-state__why {
+  color: var(--ink-on-dark-2);
+  font-weight: var(--weight-regular);
+}
+
+
+/* =============================================================================
+ * 7. THE DRAWER (guide 4 tablet, guide 4 mobile)
+ * -----------------------------------------------------------------------------
+ * One mechanism, two modes, decided by the same 64rem (1024px) boundary the CSS
+ * uses and nowhere else:
+ *
+ *   rail    >= 64rem  laptop and desktop. The sidebar is a column in the grid,
+ *                    always there, never trapped, nothing to dismiss.
+ *   drawer  <  64rem  tablet and mobile. The guide asks for a collapsible
+ *                    sidebar on tablet and an off-canvas drawer on mobile; one
+ *                    drawer serves both, and "2-column cards" and "right rail
+ *                    becomes a normal content section" are page concerns that
+ *                    fall out of the content grid rather than out of the frame.
+ *
+ * `inert` does the trapping, and it is worth saying why rather than reaching for
+ * a keydown loop. With the page marked inert and the drawer left live, the
+ * drawer is the ONLY focusable content in the document: Tab cannot leave it
+ * because there is nothing else to reach, and the browser will not move focus
+ * into a subtree it considers hidden. A hand-rolled trap has to be re-implemented
+ * correctly for every future control; `inert` cannot be got wrong, and it also
+ * takes the hidden nav out of the accessibility tree, which a transform alone
+ * does not do - an off-canvas nav that is still in the tree is still read out.
+ * ======================================================================= */
+
+.app-shell__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--app-z-scrim);
+  background: var(--surface-void);
+  /* A scrim, not a dimmer: the tokens budget two elevations and no overlays,
+   * and a dark wash over a dark page is both unbuildable from the palette and
+   * unnecessary - the drawer's edge is the boundary. */
+  opacity: 0.72;
+  border: 0;
+  padding: 0;
+  cursor: default;
+  /* No page scroll-through from under the drawer, without touching document
+   * overflow. The drawer itself scrolls and sets `overscroll-behavior:
+   * contain`, so a gesture that runs out of nav does not chain to the page
+   * either. This is the whole of the scroll lock, and it is two declarations
+   * instead of a body mutation that would also break the sticky header. */
+  touch-action: none;
+}
+
+@media (max-width: 63.9375rem) {
+  .app-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app-sidebar {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: 0;
+    z-index: var(--app-z-drawer);
+    inline-size: min(var(--app-sidebar-width), 84vw);
+    border-inline-end: var(--seam-strong);
+    /* A drawer, so it gets the second of the system's two elevations. */
+    box-shadow: var(--elevation-overlay);
+    transform: translateX(-100%);
+    transition: transform var(--motion-base) var(--ease-standard);
+  }
+
+  .app-shell[data-nav='open'] .app-sidebar {
+    transform: translateX(0);
+  }
+
+  /* No RTL in this product today, and the drawer slides from the inline start,
+   * so the direction is a one-line correction rather than a whole second set of
+   * rules. If the product ever sets `dir`, this is the only line that moves. */
+  [dir='rtl'] .app-sidebar {
+    transform: translateX(100%);
+  }
+
+  [dir='rtl'] .app-shell[data-nav='open'] .app-sidebar {
+    transform: translateX(0);
+  }
+}
+
+/* Motion answers an action, and a drawer slide is one. Under reduced motion the
+ * duration token is already 1ms, so the drawer still appears - it just arrives
+ * without a slide, which is the correct outcome and not a missing one. */
+@media (prefers-reduced-motion: reduce) {
+  .app-sidebar {
+    transition: none;
+  }
+}
+
+@media (pointer: coarse) {
+  .nav-item {
+    min-block-size: var(--tap-min);
+  }
+}
+
+
+/* =============================================================================
+ * OVERRIDES OF EXISTING RULES - both forced by the 240px column
+ * -----------------------------------------------------------------------------
+ * `.columns` puts its right rail in at 68rem (1088px), a breakpoint chosen when
+ * the page had the whole viewport. It does not any more: at 1088px the sidebar
+ * has taken 240px and 48px of that has gone to padding, so the main column
+ * would be 344px and the stored-food table would be scrolling inside it on
+ * every laptop. Guide 35 asks for exactly the opposite - on a laptop the right
+ * panels move BELOW the main column - so the rail is pushed to 90rem (1440px),
+ * which is also where the guide puts the full desktop layout. At 1440px the
+ * main column is 696px; at the 1800px content well it is 1056px.
+ *
+ * `.column`'s own vertical gap is left alone. It is 24px, which is above the
+ * guide's 14-18px "card gap", but 16px is the well's gap and this is a tuned
+ * value in a file this pass does not own. One range is honoured, one is
+ * inherited, and the report says which.
+ * ======================================================================= */
+
+@media (min-width: 68rem) {
+  .app-shell .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 90rem) {
+  .app-shell .columns {
+    grid-template-columns: minmax(0, 1fr) var(--rail-width);
+    gap: var(--space-5);
+  }
+}
+
+
+/* =============================================================================
+ * PRINT
+ * -----------------------------------------------------------------------------
+ * tokens.css already strips the bezel for paper, but a frame is worth more than
+ * its content on paper: a printed sheet with a 240px navigation column down the
+ * left and a sticky header across the top is a sheet with two wasted bands. The
+ * frame is removed and the content well is released to the full measure, which
+ * is what a copy taped inside a cabinet door actually needs.
+ * ======================================================================= */
+
+@media print {
+  .app-shell {
+    display: block;
+    min-block-size: 0;
+    overflow-x: visible;
+  }
+
+  .app-sidebar,
+  .app-header,
+  .app-shell__scrim {
+    display: none;
+  }
+
+  .app-shell__content {
+    max-inline-size: none;
+    padding: 0;
+    display: block;
+  }
+
+  .app-shell__content > * + * {
+    margin-block-start: var(--space-4);
+  }
+}

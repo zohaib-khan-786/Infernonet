@@ -1,0 +1,446 @@
+/* Base layer: reset, document defaults, focus, and the shared primitives.
+ *
+ * Every colour, size, radius, weight, leading, tracking and duration below is a
+ * token from tokens.css. A raw hex in this file is a bug.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--surface-void);
+  color: var(--ink-primary);
+  font-family: var(--font-sans);
+  font-size: var(--type-body);
+  line-height: var(--leading-body);
+  -webkit-tap-highlight-color: var(--tap-highlight);
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+figure,
+ul,
+ol,
+dl,
+dd {
+  margin: 0;
+}
+
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: var(--accent-link);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+/* --- Focus -----------------------------------------------------------------
+ * One ring, everywhere, on :focus-visible only so a mouse click does not leave
+ * a halo. The white halo makes the ring survive on the dark masthead as well as
+ * on light panels, which a single-colour ring cannot do.
+ */
+:where(a, button, input, select, summary, [tabindex]):focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: 0 0 0 var(--focus-ring-halo) var(--focus-halo);
+  border-radius: var(--radius-control);
+}
+
+.on-dark :where(a, button, input, select, summary, [tabindex]):focus-visible {
+  outline-color: var(--accent-on-dark);
+  box-shadow: 0 0 0 var(--focus-ring-halo) var(--surface-bezel);
+}
+
+/* --- Utilities ------------------------------------------------------------ */
+
+/* A visually hidden element must never be able to affect layout, and there is
+ * one element for which the standard recipe does not achieve that: a TABLE.
+ *
+ * `width: 1px` is a *minimum* on a box that establishes a table formatting
+ * context, and `table-layout: auto` sizes a table to its min-content width, so
+ * the 1px loses and the box computes to its full content width - measured at
+ * 325px, 355px and 362px for the three chart summary tables. `max-inline-size`
+ * does not help; it was measured and it does not clamp a table either. The box
+ * is `position: absolute`, so it is laid out against the initial containing
+ * block and its right edge extends the document: 403px of scrollWidth inside a
+ * 320px viewport, i.e. 83px of horizontal page scroll at 320px and 44px at
+ * 360px. `overflow: hidden` and `clip-path` do not help either, because the
+ * overflow is the box's own size, not content escaping from it.
+ *
+ * So: put the table inside a hidden wrapper. A block wrapper is 1px for real,
+ * its own overflow contains the table's, and the table keeps `display: table`
+ * - so the table and its caption are still in the accessibility tree with their
+ * row and column relationships intact, which is the whole point of them being
+ * there. Verified in the AX tree after the change.
+ *
+ * If you need a visually hidden table, wrap it. Do not put the class on the
+ * table itself.
+ */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  z-index: var(--z-skip);
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  transform: translateY(-120%);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-plate);
+  color: var(--ink-primary);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+  border: var(--seam);
+  /* One of only two things in the system allowed an elevation: it genuinely
+     floats above the page it is escaping. */
+  box-shadow: var(--elevation-raised);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+/* Every measured value. Tabular figures are what make a column comparable and
+ * what stops a cell twitching while a live reading updates. */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: var(--tracking-data);
+}
+
+.unit {
+  font-family: var(--font-sans);
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+  letter-spacing: var(--tracking-label);
+}
+
+.label {
+  font-size: var(--type-meta);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-secondary);
+  letter-spacing: var(--tracking-label);
+}
+
+.note {
+  font-size: var(--type-small);
+  color: var(--ink-secondary);
+  line-height: var(--leading-body);
+}
+
+.hint {
+  font-size: var(--type-micro);
+  color: var(--ink-tertiary);
+  /* No token for the 1.4 micro leading; the nearest, --leading-body, is too
+     loose at this size. */
+  line-height: 1.4;
+}
+
+/* --- Buttons --------------------------------------------------------------
+ * One shape, one weight. Ink-on-paper: there is no accent hue, so a button can
+ * never be mistaken for a status colour. 44px minimum hit area on coarse
+ * pointers.
+ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--control-min);
+  padding: 0 var(--space-3);
+  background: var(--surface-plate);
+  color: var(--ink-primary);
+  border: var(--seam-strong);
+  border-radius: var(--radius-control);
+  font-size: var(--type-meta);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color var(--motion-instant) var(--ease-standard),
+    border-color var(--motion-instant) var(--ease-standard),
+    color var(--motion-instant) var(--ease-standard);
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--surface-field);
+  border-color: var(--ink-secondary);
+}
+
+.btn:active:not(:disabled) {
+  background: var(--surface-sunken);
+}
+
+.btn:disabled {
+  color: var(--ink-disabled);
+  border-color: var(--rule-hairline);
+  background: var(--surface-void);
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background: var(--ink-primary);
+  border-color: var(--ink-primary);
+  color: var(--surface-field);
+}
+
+/* Hover is a lighter step of the ink, mixed from two tokens so no third
+   colour has to be invented for it. */
+.btn--primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink-primary) 88%, var(--surface-plate));
+  border-color: color-mix(in srgb, var(--ink-primary) 88%, var(--surface-plate));
+}
+
+.btn--quiet {
+  background: transparent;
+  border-color: var(--rule-hairline);
+  color: var(--ink-secondary);
+  font-weight: var(--weight-medium);
+}
+
+.btn--quiet:hover:not(:disabled) {
+  background: var(--surface-plate);
+  border-color: var(--rule-strong);
+  color: var(--ink-primary);
+}
+
+/* Buttons inside the bezel. The light-surface ink is 1.76:1 on --surface-bezel
+ * and the light-surface fill would put a white chip on a dark masthead, so the
+ * whole ladder is swapped for the bezel's own. --ink-on-dark-2 is 7.92:1 here,
+ * and --ink-on-dark is 15.28:1. */
+.masthead .btn {
+  background: transparent;
+  color: var(--ink-on-dark-2);
+  border-color: var(--rule-bezel-control);
+}
+
+.masthead .btn:hover:not(:disabled) {
+  background: var(--surface-bezel-raised);
+  color: var(--ink-on-dark);
+  border-color: var(--rule-bezel-control);
+}
+
+/* The boundary, not the label, was the invisible half of this trade. The label
+ * was fixed to 7.92:1 and the border was left at --rule-bezel, 1.56:1 on the
+ * bezel, which is below the 3:1 WCAG 1.4.11 asks for on anything you have to
+ * be able to identify as a control - so `Reload` read as unlabelled floating
+ * text and only became obviously a button on hover, when the background
+ * changed. --rule-bezel-control is 3.99:1 and still a hairline on a near-black
+ * ground. */
+.masthead .btn--quiet {
+  border-color: var(--rule-bezel-control);
+}
+
+.masthead .btn--quiet:hover:not(:disabled) {
+  background: var(--surface-bezel-raised);
+  color: var(--ink-on-dark);
+  border-color: var(--rule-bezel-control);
+}
+
+/* Disabled on the bezel keeps the bezel dark. --ink-disabled is a light-surface
+ * ink and would print a pale chip on the masthead; --ink-on-dark-3 is 4.83:1
+ * here, so this is not even relying on the 1.4.3 disabled exemption. The
+ * boundary stays at the control value so a disabled button is not the one
+ * control in the bezel with an unidentifiable edge. */
+.masthead .btn:disabled {
+  color: var(--ink-on-dark-3);
+  background: transparent;
+  border-color: var(--rule-bezel-control);
+}
+
+@media (pointer: coarse) {
+  .btn {
+    min-height: var(--tap-min);
+    padding-inline: var(--space-4);
+  }
+}
+
+/* --- Segmented control (chart range) -------------------------------------- */
+
+.segmented {
+  display: inline-flex;
+  border: var(--seam-strong);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+  background: var(--surface-plate);
+}
+
+.segmented__option {
+  min-width: 3rem;
+  min-height: var(--control-min);
+  padding: 0 var(--space-3);
+  background: transparent;
+  border: 0;
+  border-inline-start: var(--hairline) solid var(--rule-hairline);
+  color: var(--ink-secondary);
+  font-size: var(--type-meta);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard);
+}
+
+.segmented__option:first-child {
+  border-inline-start: 0;
+}
+
+.segmented__option:hover {
+  background: var(--surface-field);
+  color: var(--ink-primary);
+}
+
+.segmented__option[aria-pressed='true'],
+.segmented__option[aria-checked='true'] {
+  background: var(--ink-primary);
+  color: var(--surface-field);
+}
+
+@media (pointer: coarse) {
+  .segmented__option {
+    min-height: var(--tap-min);
+    min-width: 3.5rem;
+  }
+}
+
+/* --- Text input ----------------------------------------------------------- */
+
+.input {
+  min-height: var(--control-min);
+  padding: 0 var(--space-2);
+  background: var(--surface-plate);
+  color: var(--ink-primary);
+  border: var(--seam-strong);
+  border-radius: var(--radius-control);
+  font-size: var(--type-small);
+}
+
+.input:hover {
+  border-color: var(--ink-secondary);
+}
+
+.input::placeholder {
+  color: var(--ink-tertiary);
+}
+
+@media (pointer: coarse) {
+  .input {
+    min-height: var(--tap-min);
+  }
+}
+
+/* --- Table base ----------------------------------------------------------- */
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--type-small);
+}
+
+.data-table caption {
+  text-align: start;
+}
+
+.data-table th,
+.data-table td {
+  padding: var(--space-2) var(--space-3);
+  text-align: start;
+  vertical-align: top;
+  border-block-end: var(--seam);
+}
+
+/* Headers wrap; VALUES stay on one line. "Time remaining" over two lines is
+   fine, "3 d 6 h" broken across two lines is not. Wrapping the headers is what
+   lets the table fit its column instead of escaping it - with all six headers
+   nowrap, the table's min-content width was 967px, which overran a 584px
+   column at the 1088px breakpoint and painted over the sibling panel. */
+.data-table thead th {
+  position: sticky;
+  z-index: 1;
+  inset-block-start: 0;
+  background: var(--surface-void);
+  border-block-end: var(--seam-strong);
+  font-size: var(--type-meta);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-secondary);
+  text-wrap: balance;
+}
+
+.data-table tbody tr:last-child td {
+  border-block-end: 0;
+}
+
+.data-table tbody tr:hover {
+  background: var(--surface-field);
+}
+
+/* Numeric columns carry tabular figures whether or not the cell was given the
+   .num utility, so a quantity ticking up does not shift the column. */
+/* Values DO wrap, on a word boundary, and that is deliberate.
+ *
+ * The original `white-space: nowrap` here kept "12 Mar 2026" and "3 d 6 h" on
+ * one line, which is nicer - but six non-wrapping columns gave the food table a
+ * 967px min-content width. In a 582px panel that meant the deciding columns
+ * (Status, Time remaining) sat off-screen behind a scroll at the 1088px
+ * breakpoint, which is the number a volunteer uses to decide about the food.
+ *
+ * `overflow-wrap: anywhere` breaks at any point only as a last resort; these
+ * cells have real spaces, so "12 Mar" / "2026" and "3 d" / "6 h" wrap naturally
+ * and the digits of a single value are still never split.
+ */
+.data-table .cell-num {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: var(--tracking-data);
+  overflow-wrap: anywhere;
+}
+
+.data-table .cell-head {
+  font-weight: var(--weight-semibold);
+  color: var(--ink-primary);
+}
